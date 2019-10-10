@@ -1,0 +1,14 @@
+<RCC>
+  <qresource prefix="/icons">
+    <file>icons/arrow_both_ways.svg</file>
+    <file>icons/arrow_outwards.svg</file>
+    <file>icons/arrow_returning.svg</file>
+    <file>icons/circle.svg</file>
+    <file>icons/circle_double.svg</file>
+    <file>icons/pause_button.svg</file>
+    <file>icons/skip_to_begin.svg</file>
+    <file>icons/skip_to_end.svg</file>
+    <file>icons/step_backwards.svg</file>
+    <file>icons/step_forwards.svg</file>
+  </qresource>
+</RCC>

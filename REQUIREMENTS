@@ -1,0 +1,6 @@
+A new version of Python, at least 3.5 probably
+exrex
+PyQt5
+Standard Python libraries: random, re, copy.deepcopy, OrderedDict, etc.
+
+Program will probably work best on a 1920x1080 display. Tested on Ubuntu 18.04, but should also work on Windows, at a minimum.

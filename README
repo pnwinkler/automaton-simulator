@@ -1,0 +1,21 @@
+Simulates an automaton. Allows user to create an automaton, then test it, either against automatically generated problems
+(loosely graded by difficulty), or against strings that the user provides.
+
+Controls:
+They're fiddly (for now), though I plan to keep improving them, once I have written the report for this project.
+- To create a state, click on empty space
+- To create an arrow, click on the EDGE of the originating state (unfortunately fiddly)
+- Mousing over a graphical item will provide a tooltip describing what can be done with that item.
+- Otherwise, right-clicking on a graphical item will provide a context menu
+- Once you have the automaton set up as you'd like, press "Update Automaton" in the bottom right.
+
+What doesn't work:
+- Deletion. Deleting a state works visually, but not functionally
+
+Bugs:
+- Arrows may originate from the wrong side of states, typically if target-state's x coord < originating-state's X coord
+AND they have a significant Y discrepancy, or if the 2 states are very close.
+
+General notes:
+In its current state, this program works, but takes some finesse to operate. I will keep developing this project, until
+it will control intuitively and consistently.

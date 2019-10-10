@@ -1,0 +1,4 @@
+pyuic5 -x automaton_simulator.ui -o automaton_simulator.py
+
+to convert the .ui file to a .py file, which can then be run
+this lets you preview the GUI
