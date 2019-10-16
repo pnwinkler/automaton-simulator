@@ -6,3 +6,5 @@ Requires:
 Python 3.5 or newer
 exrex
 PyQt5
+
+LGPL license is for Qt compliance.
