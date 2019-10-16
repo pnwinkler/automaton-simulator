@@ -1,6 +1,6 @@
 A work in progress - not yet ready for public use.
 
-Automaton simulator with a quizzing element. Allows user to create and test automata, against automatically generated difficulty-graded problems, or against user-provided strings.
+Automaton simulator with a quizzing element. Allows user to create and test automata, against randomly generated difficulty-graded regular expressions, or against user-provided strings.
 
 Requires:
 Python 3.5 or newer
