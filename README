@@ -1,4 +1,4 @@
-A work in progress - not yet ready for public use.
+A work in progress - not yet ready for public use (it works, but it's somewhat buggy, and not feature-complete).
 
 A deterministic finite automaton simulator with quizzing element. Allows user to create and test automata, against randomly generated difficulty-graded regular expressions, or against user-provided strings.
 
