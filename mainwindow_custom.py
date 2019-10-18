@@ -6,6 +6,7 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import QFont
 from GUI_custom_scene import clickable_qgraphicsview
+from GUI_custom_ellipseitem import *
 from generate_strings_from_regex import *
 import automaton_logic as automaton_logic
 import regex_generator as regex_generator
@@ -14,7 +15,6 @@ from collections import OrderedDict
 
 # for testing only
 from GUI_custom_svgitem import *
-from GUI_graphicsitem_state import *
 
 class Ui_MainWindow(object):
     def __init__(self):
@@ -88,11 +88,13 @@ class Ui_MainWindow(object):
         # self.svgItem.setToolTip("Default state mainwindow_custom.")
 
         # problem: setScale isn't achieving anything visually!
-        self.el = state_graphic()
-        print("scale before:", self.el.scale(), ',', end =' ')
-        self.el.setScale(50)
+        # self.el = state_graphic()
+        self.el = custom_ellipse()
+        self.el.setRect(50,50,120,120)
+        # print("scale before:", self.el.scale(), ',', end =' ')
+        # self.el.setScale(50)
         self.mw_central_graphicsScene.addItem(self.el)
-        print("scale after:", self.el.scale())
+        # print("scale after:", self.el.scale())
         print("self.el.boundingRect()", self.el.boundingRect())
 
         # self.el = QtWidgets.QGraphicsEllipseItem()
@@ -100,11 +102,12 @@ class Ui_MainWindow(object):
         # print("self.el.boundingRect()", self.el.boundingRect())
         # print(self.el.rect())
         # self.mw_central_graphicsScene.addItem(self.el)
-        self.el2 = QtWidgets.QGraphicsEllipseItem()
+        # self.el2 = QtWidgets.QGraphicsEllipseItem()
         self.el2.setRect(160,145,10,10)
+        print("self.el2.boundingRect()", self.el2.boundingRect())
         # self.el = QtSvg.QGraphicsSvgItem(self.el)
         # ellipses can be converted to custom SVG items
-        self.el.setScale(1)
+        # self.el.setScale(1)
         self.mw_central_graphicsScene.addItem(self.el2)
         # collision detection works excellently with ellipses
         print("Do items collide?", self.el2.collidesWithItem(self.el))
