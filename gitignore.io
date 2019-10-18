@@ -107,3 +107,6 @@ fabric.properties
 
 # End of https://www.gitignore.io/api/linux,pycharm
 
+# own additions
+.idea/
+__pycache__/*
