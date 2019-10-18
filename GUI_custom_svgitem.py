@@ -6,17 +6,36 @@
 # review this later. For now, there are simplier things that need improving
 
 from PyQt5 import QtSvg
-from PyQt5.QtCore import QPoint
+from PyQt5.QtGui import QPainterPath
+from PyQt5.QtCore import QPoint, Qt
 from PyQt5.QtWidgets import QMenu
 
 class svgItem_mod(QtSvg.QGraphicsSvgItem):
     def __init__(self, parent):
         QtSvg.QGraphicsSvgItem.__init__(self, parent)
         self.wants_to_be_deleted = False
+        self.are_properties_set = False
 
     # could add a function like setStateProperties or setArrowProperties
     # so that the distinction can be chosen by the scene
     # also need custom hitboxes
+    # todo: once this is all setup, replace all manual property setting in the custom scene file
+    # with references to these functions
+    def setStateProperties(self):
+        # todo: get hitboxes setup
+        # states should be a simple ellipse probably
+        # and arrows two rectangles: one on the head, one on the body
+        self.setProperty('state', True)
+        self.setProperty('arrow', False)
+        self.are_properties_set = True
+        self.shape = self._setupShapes('state')
+        pass
+    def setArrowProperties(self):
+        self.setProperty('arrow', True)
+        self.setProperty('state', False)
+        self.are_properties_set = True
+        self.shape = self._setupShapes('arrow')
+        pass
 
     def contextMenuEvent(self, event):
         # turns out svgitem doesn't have a to global coords function
@@ -92,3 +111,24 @@ class svgItem_mod(QtSvg.QGraphicsSvgItem):
 
         if action == cancel_action:
             pass
+
+    def _setupShapes(self, shape_string):
+        # set up the arrow and state shapes (i.e. their bounds)
+        state_shape = QPainterPath()
+        # I don't know how this works or if it's correct
+        state_shape.setFillRule(Qt.WindingFill)
+
+
+
+        arrow_shape = None
+
+
+
+
+
+        if shape_string == 'state':
+            return state_shape
+        elif shape_string == 'arrow':
+            return arrow_shape
+        else:
+            raise ValueError('invalid shape given to _setupShapes function')

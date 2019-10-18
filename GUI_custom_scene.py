@@ -4,8 +4,8 @@
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QLineEdit, QPushButton
 from PyQt5.QtCore import Qt, QRect
 from PyQt5.QtGui import QTransform
-from simulator.GUI_custom_svgitem import svgItem_mod
-import simulator.resources.svg_paths as svg_paths
+from GUI_custom_svgitem import svgItem_mod
+import resources.svg_paths as svg_paths
 
 
 # TODO: resolve bug where connecting an arrow to a state slightly to the left, but far below the originating state
