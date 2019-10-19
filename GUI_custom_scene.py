@@ -104,21 +104,17 @@ class clickable_qgraphicsview(QGraphicsScene):
                 # c may be a Qt.Svg.QGraphicsSvgItem, or another type like a label
                 # we look to the object's properties to determine which
                 item_centre = None
-                is_state = c.toGraphicsObject().property('state')
-                is_arrow = c.toGraphicsObject().property('arrow')
+                is_state = isinstance(c, custom_ellipse)
+                is_arrow = not is_state
                 clicked_obj = c
 
+                size = c.sceneBoundingRect().size()
+                width = c.width()
+                height = c.height()
                 if is_state:
-                    state_size = c.sceneBoundingRect().size()
-                    state_width = state_size.width()
-                    state_height = state_size.height()
-                    item_centre = ((c.pos().x() + 0.4 * state_width),
-                                   (c.pos().y() + 0.4 * state_height))
-
+                    item_centre = ((c.pos().x() + 0.5 * state_width),
+                                   (c.pos().y() + 0.5 * state_height))
                 elif is_arrow:
-                    arrow_size = c.sceneBoundingRect().size()
-                    arrow_height = arrow_size.height()
-                    arrow_width = arrow_size.width()
                     item_centre = ((c.pos().x() + 0.4 * arrow_width),
                                    (c.pos().y() + 0.4 * arrow_height))
 
@@ -147,7 +143,7 @@ class clickable_qgraphicsview(QGraphicsScene):
             if user_clicked_state_edge:
                 connection_options = []
                 for i in self.items_copy:
-                    if i.property('state'):
+                    if isinstance(i, custom_ellipse):
                         state_count += 1
                         if i == clicked_obj:
                             pass
@@ -159,41 +155,27 @@ class clickable_qgraphicsview(QGraphicsScene):
                     print('state_count', state_count)
                     print('No two states to connect! Please add a state by clicking in empty space')
                 else:
-                    # todo: turn into factory
-                    # the number of states here determines how many states we can connect to
-                    # could be replaced by a factory, following the suggestion at:
-                    # https://stackoverflow.com/questions/6784084/how-to-pass-arguments-to-functions-by-the-click-of-button-in-pyqt
-                    # it's kinda fucked if there are more than 6 user states
-                    op1 = QPushButton(self.parent())
-                    op2 = QPushButton(self.parent())
-                    op3 = QPushButton(self.parent())
-                    op4 = QPushButton(self.parent())
-                    op5 = QPushButton(self.parent())
-                    op6 = QPushButton(self.parent())
-                    op7 = QPushButton(self.parent())
+                    available_ops = []
+                    for state in range(state_count):
+                        # each QPushButton is a connection option, to another state
+                        available_ops.append(QPushButton(self.parent()))
 
-                    # this is the limit of what can fit on screen, roughly.
-                    available_ops = [op1, op2, op3, op4, op5, op6, op7]
-
-                    # tmpcount is an index, used to set the correct state names, and adjust y offset
-                    # so that the QPushButtons below do not stack over each other
-                    tmpcount = 0
+                    # option_count reflects the number of connection options
+                    # it's used as an index, to set the correct state names,
+                    # and adjust y offsets, so that the QPushButtons below do not stack
+                    option_count = 0
                     state_names = []
                     for co in connection_options:
                         # expects a '.' after the state
                         # state names will be like "State 1" or "State Q1"
                         state_names.append(co.toolTip().split('.')[0])
-                        # print('info: state_name=', state_names)
 
                         # set properties of each option
                         # there's a limit of 9 states right now
-                        available_ops[tmpcount].setGeometry(300, 200 + 30 * tmpcount, 200, 30)
-                        available_ops[tmpcount].setText("Connect to: " + state_names[tmpcount])
+                        available_ops[option_count].setGeometry(300, 200 + 30 * option_count, 200, 30)
+                        available_ops[option_count].setText("Connect to: " + state_names[option_count])
 
                         item_at_click_loc = self.itemAt(x, y, QTransform())
-
-                        # if state_names[tmpcount] == item_at_click_loc:
-                        #     available_ops[tmpcount].setText("Connect to: " + state_names[tmpcount] + "(self)")
 
                         # we need this hacky solution to a fringe error
                         # namely when the user creates 2 states, then clicks NEAR but not on one
@@ -201,35 +183,34 @@ class clickable_qgraphicsview(QGraphicsScene):
                         # note that the 130 is guesswork and this whole block should be replaced
                         # by something more sensible
                         if not item_at_click_loc:
-                            # find closest item to click location
-                            for i in self.items():
-                                if i.property('state'):
-                                    if abs(i.pos().x() - x) < 130:
-                                        item_at_click_loc = i
-                                        break
-                                    # print("DEBUG ", abs(i.pos().x() - x))
+                            raise ValueError('No item at click_loc. Might need to reimplement the lines below this. Or just review stuff generally')
+                            # # find closest item to click location
+                            # for i in self.items():
+                            #     if i.property('state'):
+                            #         if abs(i.pos().x() - x) < 130:
+                            #             item_at_click_loc = i
+                            #             break
+                            #         # print("DEBUG ", abs(i.pos().x() - x))
 
                         # clumsy, but this self._args is setup so the _connectTwoStates() function can access its vars
                         # now that we have a closure, this could be made into params
                         # PROBLEM: we create two states, then click on empty space to connect
                         # and this then causes problems with nonetypes
+                        # todo: review this. Make it more self-explanatory, or abolish it
                         self._args = (item_at_click_loc, available_ops)
-
-                        # should be avoided by the hacky block above
-                        if not item_at_click_loc:
-                            raise ValueError("NO ITEM AT CLICK LOC")
 
                         # we pass this text (which mentions the state name) to _connectTwoStates()
                         # so it can find itself the correct target state, as it receives the text
                         # of the clicked QPushButton passed in
-                        text_to_attach = available_ops[tmpcount].text()
-                        available_ops[tmpcount].clicked.connect(self._closureconnectTwoStates(text_to_attach))
+                        text_to_attach = available_ops[option_count].text()
+                        available_ops[option_count].clicked.connect(self._closureconnectTwoStates(text_to_attach))
 
-                        available_ops[tmpcount].show()
-                        tmpcount += 1
+                        available_ops[option_count].show()
+                        option_count += 1
+
                     op_cancel = QPushButton(self.parent())
                     available_ops.append(op_cancel)
-                    op_cancel.setGeometry(300, 200 + 30 * tmpcount, 200, 30)
+                    op_cancel.setGeometry(300, 200 + 30 * option_count, 200, 30)
                     op_cancel.clicked.connect(self._closeOptions)
                     op_cancel.setText("Cancel")
                     op_cancel.show()
@@ -242,12 +223,6 @@ class clickable_qgraphicsview(QGraphicsScene):
                 # in practise, this means deleting the clicked-on state
                 # and putting a state of different appearance but near-identical
                 # properties in its place
-
-                # this has never happened, but I keep it in case I modify the code above
-                # at some point, so I can catch errors early.
-                if not item_at_click_loc.property('state'):
-                    raise ValueError(
-                        'This should not happen. user_clicked_state_centre is True, but item_at_click_loc is not a state')
 
                 # delete the clicked item (if it's a state), so we can replace it
                 placement_x = item_at_click_loc.pos().x()
@@ -493,19 +468,19 @@ class clickable_qgraphicsview(QGraphicsScene):
         #  and make the rest of the program respond appropriately
         #  add behavior for movement
         # check if any items want to be deleted or moved
-        for i in self.items():
-            if i.property('state'):
-                if i.wants_to_be_deleted:
-                    # remove transitions and remove item itself
-                    name_to_remove = self._getNameFromState(i)
-                    self._removeStateFromAutomatonBoard(name_to_remove)
-                    print("info: state removed")
-                    i.deleteLater()
-                    print(self.automaton_board)
-                    return
-            if i.property('arrow'):
-                # todo: fill this in
-                pass
+        # for i in self.items():
+        #     if i.property('state'):
+        #         if i.wants_to_be_deleted:
+        #             # remove transitions and remove item itself
+        #             name_to_remove = self._getNameFromState(i)
+        #             self._removeStateFromAutomatonBoard(name_to_remove)
+        #             print("info: state removed")
+        #             i.deleteLater()
+        #             print(self.automaton_board)
+        #             return
+        #     if i.property('arrow'):
+        #         # todo: fill this in
+        #         pass
 
         # mouse X, mouse Y
         x = event.scenePos().x()

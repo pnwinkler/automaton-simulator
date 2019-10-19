@@ -110,3 +110,4 @@ fabric.properties
 # own additions
 .idea/
 __pycache__/*
+__pycache__/**

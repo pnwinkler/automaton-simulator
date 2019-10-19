@@ -102,7 +102,7 @@ class Ui_MainWindow(object):
         # print("self.el.boundingRect()", self.el.boundingRect())
         # print(self.el.rect())
         # self.mw_central_graphicsScene.addItem(self.el)
-        # self.el2 = QtWidgets.QGraphicsEllipseItem()
+        self.el2 = QtWidgets.QGraphicsEllipseItem()
         self.el2.setRect(160,145,10,10)
         print("self.el2.boundingRect()", self.el2.boundingRect())
         # self.el = QtSvg.QGraphicsSvgItem(self.el)

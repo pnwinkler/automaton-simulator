@@ -1,3 +1,5 @@
+# TODO: REPLACE. IT IS ALL REDUNDANT
+
 # contains the code for custom SVG objects (states and arrows)
 # includes code for boundary setting etc
 # SUBCLASS FURTHER? can name them differently too?
