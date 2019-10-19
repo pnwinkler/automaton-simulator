@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QLineEdit, QPushB
 from PyQt5.QtCore import Qt, QRect
 from PyQt5.QtGui import QTransform
 from GUI_custom_svgitem import svgItem_mod
+from GUI_custom_ellipseitem import custom_ellipse
 import resources.svg_paths as svg_paths
 
 
@@ -69,7 +70,7 @@ class clickable_qgraphicsview(QGraphicsScene):
 
     # todo: rename this
     # it doesn't at all explain that it captures mouse press events, for example
-    def _helperChooseAndReturnSvgitemPath(self, event):
+    def _respondToMouseEvents(self, event):
         # based on the position that the user clicks, we determine the appropriate
         # SVG graphic and return its path, so that another function may create it
         # the other function can then create it and set its scale, properties, etc
@@ -109,14 +110,10 @@ class clickable_qgraphicsview(QGraphicsScene):
                 clicked_obj = c
 
                 size = c.sceneBoundingRect().size()
-                width = c.width()
-                height = c.height()
-                if is_state:
-                    item_centre = ((c.pos().x() + 0.5 * state_width),
-                                   (c.pos().y() + 0.5 * state_height))
-                elif is_arrow:
-                    item_centre = ((c.pos().x() + 0.4 * arrow_width),
-                                   (c.pos().y() + 0.4 * arrow_height))
+                # note that QRectF has methods like bottomLeft() and center() !!
+                width = c.boundingRect().width()
+                height = c.boundingRect().height()
+                item_centre = (c.boundingRect().center().x(), c.boundingRect().center().y())
 
                 # we determine where (relative to each item in self.items) the user clicked
                 # so we can set execute appropriate behaviour later
@@ -124,20 +121,16 @@ class clickable_qgraphicsview(QGraphicsScene):
                     # reset user_clicked_empty_space. We only want it tracking the last c
                     user_clicked_empty_space = False
 
-                    if abs(x - item_centre[0]) < 0.35 * state_width \
-                            and abs(y - item_centre[1]) < 0.35 * state_height:
+                    # user clicked the central third
+                    if abs(x - item_centre[0]) < 0.33 * width \
+                            and abs(y - item_centre[1]) < 0.33 * height:
                         user_clicked_state_centre = True
-                        break
 
-                    # note that "empty space" may not be empty, it's just distant from c
-                    elif abs(x - item_centre[0]) > 0.7 * state_width \
-                            or abs(y - item_centre[1]) > 0.7 * state_height:
-                        user_clicked_empty_space = True
-
-                    # anything else is considered the edge (currently between 0.35 and 0.7)
-                    else:
+                    elif c.contains(event.scenePos()):
                         user_clicked_state_edge = True
-                        break
+
+                    else:
+                        user_clicked_empty_space = True
 
             # provide connection options to other states
             if user_clicked_state_edge:
@@ -241,26 +234,27 @@ class clickable_qgraphicsview(QGraphicsScene):
                 # we replace the state with another object of the same name, but different graphic
                 # we set the properties accordingly. Because we force the same state name, we do
                 # not need to wipe & redo its entry in self.automaton_board, instead we just update it
-                if item_at_click_loc.property('accepting') and not item_at_click_loc.property('initial'):
-                    self._addStatePropertyToAutomatonBoard(item_at_click_loc, 'i')
+                if state_at_click_loc.accepting and not state_at_click_loc.initial:
+                    self._addStatePropertyToAutomatonBoard(state_at_click_loc, 'i')
+                    # set the object to accepting? Instead of replacing it
                     return svg_paths.state_accepting_initial_colour, (placement_x, placement_y)
 
-                elif item_at_click_loc.property('initial') and item_at_click_loc.property('accepting'):
-                    self._removeStatePropertyFromAutomatonBoard(item_at_click_loc, 'ai')
+                elif state_at_click_loc.initial and state_at_click_loc.accepting:
+                    self._removeStatePropertyFromAutomatonBoard(state_at_click_loc, 'ai')
                     return svg_paths.state, (placement_x, placement_y)
 
-                elif not item_at_click_loc.property('initial') and not item_at_click_loc.property('accepting'):
-                    self._addStatePropertyToAutomatonBoard(item_at_click_loc, 'a')
+                elif not state_at_click_loc.initial and not state_at_click_loc.accepting:
+                    self._addStatePropertyToAutomatonBoard(state_at_click_loc, 'a')
                     return svg_paths.state_accepting_colour, (placement_x, placement_y)
 
-                elif item_at_click_loc.property('accepting'):
-                    self._removeStatePropertyFromAutomatonBoard(item_at_click_loc, 'a')
-                    self._addStatePropertyToAutomatonBoard(item_at_click_loc, 'i')
+                elif state_at_click_loc.accepting:
+                    self._removeStatePropertyFromAutomatonBoard(state_at_click_loc, 'a')
+                    self._addStatePropertyToAutomatonBoard(state_at_click_loc, 'i')
                     return svg_paths.state_initial, (placement_x, placement_y)
 
-                elif item_at_click_loc.property('initial') and not item_at_click_loc.property('accepting'):
-                    self._removeStatePropertyFromAutomatonBoard(item_at_click_loc, 'i')
-                    self._addStatePropertyToAutomatonBoard(item_at_click_loc, 'a')
+                elif state_at_click_loc.initial and not state_at_click_loc.accepting:
+                    self._removeStatePropertyFromAutomatonBoard(state_at_click_loc, 'i')
+                    self._addStatePropertyToAutomatonBoard(state_at_click_loc, 'a')
                     return svg_paths.state_accepting_colour, (placement_x, placement_y)
 
                 # then mousePressEvent function will set further properties, such as 'state'
@@ -490,7 +484,7 @@ class clickable_qgraphicsview(QGraphicsScene):
         if event.button() == Qt.LeftButton:
             # retrieve svg item path, and (if given), state placement coordinates
             # these coordinates can be used to place states
-            svgPath = self._helperChooseAndReturnSvgitemPath(event)
+            svgPath = self._respondToMouseEvents(event)
             if isinstance(svgPath, tuple):
                 received_placement_coords = svgPath[1]
                 svgPath = svgPath[0]

@@ -111,3 +111,4 @@ fabric.properties
 .idea/
 __pycache__/*
 __pycache__/**
+__pycache__/*.pyc

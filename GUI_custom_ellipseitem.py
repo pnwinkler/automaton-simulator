@@ -12,6 +12,8 @@ class custom_ellipse(QGraphicsEllipseItem):
         # self.setup_initial_graphic(coords_tpl)
         print("CUSTOM ELLIPSE ITEM CREATED")
         # self.bounding = coords_tpl
+        self.accepting = False
+        self.initial = False
 
     def contextMenuEvent(self, event):
         # add right click behavior (if relevant)
@@ -21,3 +23,7 @@ class custom_ellipse(QGraphicsEllipseItem):
         cancel_action = menu.addAction("Cancel")
 
         action = menu.exec(QPoint(self.pos().x(), self.pos().y()))
+
+    # todo: code methods to toggle accepting, initial states
+    # and represent them, too (logically)
+    
