@@ -44,3 +44,6 @@ class custom_ellipse(QGraphicsEllipseItem):
         self.NEW = QGraphicsEllipseItem(1.1* x_pos, 1.1* y_pos, 0.5 * w, 0.5* h)
 
         pass
+
+    def toggleInitial(self):
+        pass

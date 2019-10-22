@@ -1,5 +1,6 @@
-# contains the custom scene. Orchestrates custom items, allowing for custom
-# control scheme
+# contains the custom scene.
+# responsible for creating and placing items, representing a board state,
+# updating item properties, handling all left-click behavior etc.
 
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QLineEdit, QPushButton
 from PyQt5.QtCore import Qt, QRect
@@ -38,25 +39,14 @@ class clickable_qgraphicsview(QGraphicsScene):
         # self.state_scale = 0.09
 
         # offsets for straight lines
-        self.straight_arrows_x_offset = -65
-        self.straight_arrows_y_offset = -10
-        self.straight_arrows_scale = .2
-
-        # signals mousePressEvent() not to create an object
-        self.dont_create = 'dontcreate'
-
-        # UPDATE: ellipse system no longer creates & destroys objects to change properties, so this is redundant
-        # tells the naming function whether to overrule its default behavior
-        # we need this so that when we change a state's property (specifically accepting, initial)
-        # we don't rename the state
-        # the first value indicates whether special action is required by the tooltip setting function
-        # the second is the tooltip which we would set, in that scenario
-        # self.force_name = [False, None]
+        # self.straight_arrows_x_offset = -65
+        # self.straight_arrows_y_offset = -10
+        # self.straight_arrows_scale = .2
 
         # complete guess. Used by the state placement function to place states at appropriate distances
         # from each other (i.e. arrow length distances)
         # edit as needed
-        self.arrow_length = 150
+        # self.arrow_length = 150
 
         # a variable to represent the state of the automaton at any given point
         # used to present the simulation to outside files,
@@ -64,37 +54,31 @@ class clickable_qgraphicsview(QGraphicsScene):
         # those requests will then have to update their understanding based on this var
         self.automaton_board = dict()
 
-    def _findClosestArrowToGivenCoords(self, coords_tpl):
-        # returns the arrow closest to the coordinates given by coords_tpl
-        coords_x = coords_tpl[0]
-        coords_y = coords_tpl[1]
-        arrow_lst = []
-        for i in self.items():
-            if i.property('arrow'):
-                arrow_lst.append(i)
+    def mousePressEvent(self, event):
+        # the scene only responds to left clicks
+        # right clicks (such as for menus),
+        # are handled by the objects themselves
+        # they 'receive' the event, for lack of a better term
+        if event.button() != Qt.LeftButton:
+            return
 
-        min_dist = None
-        closest_arrow = None
-        for s in arrow_lst:
-            dist_from_coords = abs(s.pos().x() - coords_x) + abs(s.pos().y() - coords_y)
-            if not min_dist:
-                min_dist = dist_from_coords
-                closest_arrow = s
-            else:
-                if dist_from_coords < min_dist:
-                    min_dist = dist_from_coords
-                    closest_arrow = s
-        return closest_arrow
+        # 1) todo: add code to create items and set properties
+        # self.XXXXXXXXXXX.setScale(self.state_scale)
+        # self.XXXXXXXXXXX.setToolTip(self._helperReturnStateTooltip())
+        # self.addItem(self.XXXXXXXXXXXXXX)
 
-    def _respondToMouseEvents(self, event):
         # depending on where the user clicks, we may create an object
         # (a state or arrow), or we may alter a state's properties.
+        # SCHEME:
+        # left click on empty space -> create state
+        # left click on state -> change its properties
+        # ...
         x = event.scenePos().x()
         y = event.scenePos().y()
 
         state_count = 0
 
-        # QTransform() doesn't seem to do anything but is mandatory
+        # QTransform() is mandatory
         item_at_click_loc = self.itemAt(x, y, QTransform())
 
         if not isinstance(item_at_click_loc, QGraphicsTextItem):
@@ -112,7 +96,7 @@ class clickable_qgraphicsview(QGraphicsScene):
             for c in self.items_copy:
                 # c may be any object on screen: a state, an arrow, a textbox...
                 # note that textboxes may soon be abolished
-                is_state = isinstance(c, custom_ellipse)
+                is_state = self._isState()
                 clicked_obj = c
 
                 size = c.sceneBoundingRect().size()
@@ -138,8 +122,8 @@ class clickable_qgraphicsview(QGraphicsScene):
                     else:
                         user_clicked_empty_space = True
             else:
-                print("_respondToMouseEvents does not yet have behavior coded here for non-state objects")
-
+                print(
+                    "_respondToMouseEvents / mousePressEvent does not yet have behavior coded here for non-state objects")
             # take action according to where a user clicked (relative to the state)
             if user_clicked_state_edge:
                 # provide connection options to other states
@@ -194,13 +178,6 @@ class clickable_qgraphicsview(QGraphicsScene):
                         if not item_at_click_loc:
                             raise ValueError(
                                 'No item at click_loc. Might need to reimplement the lines below this. Or just review stuff generally')
-                            # # find closest item to click location
-                            # for i in self.items():
-                            #     if i.property('state'):
-                            #         if abs(i.pos().x() - x) < 130:
-                            #             item_at_click_loc = i
-                            #             break
-                            #         # print("DEBUG ", abs(i.pos().x() - x))
 
                         # we pass this text (which mentions the state name) to _connectTwoStates()
                         # so it can find itself the correct target state, as it receives the text
@@ -217,73 +194,45 @@ class clickable_qgraphicsview(QGraphicsScene):
                     op_cancel.clicked.connect(self._closeOptionsMenu)
                     op_cancel.setText("Cancel")
                     op_cancel.show()
-
-                # tell mousePressEvent not to create a new object
-                # todo: replace all self.dont_create things with something more logical
-                #  like return None
-                return self.dont_create
+                return
 
             if user_clicked_state_centre:
+                # toggle state properties (accepting, initial)
+                # each time the user clicks a state centre
+                # this affects state appearance too
+                # the clicked-on object is modified in place. It's not replaced
                 state_at_click_loc = item_at_click_loc
-                # each time the user clicks the state centre, it switches between
-                # regular, accepting, initial properties (& appearance)
-                # in practise, this means deleting the clicked-on state
-                # and putting a state of different appearance but near-identical
-                # properties in its place
 
-                # delete the clicked item (if it's a state), so we can replace it
-                placement_x = item_at_click_loc.pos().x()
-                placement_y = item_at_click_loc.pos().y()
-                deleted_state_tooltip = item_at_click_loc.toolTip()
-                self.removeItem(item_at_click_loc)
-
-                # print('info: item(s) at click location', self.itemAt(x, y, QTransform()))
-                # print('state at location accepting?:', item_at_click_loc.property('accepting'))
-                # print('state at location initial?:', item_at_click_loc.property('initial'))
-
-                # accepting -> initial + accepting -> state -> accepting -> initial
-                # self.force_name gets reset every time a new tooltip is created
-                self.force_name = [True, deleted_state_tooltip]
-
-                # we replace the state with another object of the same name, but different graphic
-                # we set the properties accordingly. Because we force the same state name, we do
-                # not need to wipe & redo its entry in self.automaton_board, instead we just update it
-                if state_at_click_loc.accepting and not state_at_click_loc.initial:
-                    self._addStatePropertyToAutomatonBoard(state_at_click_loc, 'i')
-                    # set the object to accepting? Instead of replacing it
-                    return svg_paths.state_accepting_initial_colour, (placement_x, placement_y)
-
-                elif state_at_click_loc.initial and state_at_click_loc.accepting:
-                    self._removeStatePropertyFromAutomatonBoard(state_at_click_loc, 'ai')
-                    return svg_paths.state, (placement_x, placement_y)
-
-                elif not state_at_click_loc.initial and not state_at_click_loc.accepting:
-                    self._addStatePropertyToAutomatonBoard(state_at_click_loc, 'a')
-                    return svg_paths.state_accepting_colour, (placement_x, placement_y)
-
-                elif state_at_click_loc.accepting:
-                    self._removeStatePropertyFromAutomatonBoard(state_at_click_loc, 'a')
-                    self._addStatePropertyToAutomatonBoard(state_at_click_loc, 'i')
-                    return svg_paths.state_initial, (placement_x, placement_y)
-
-                elif state_at_click_loc.initial and not state_at_click_loc.accepting:
-                    self._removeStatePropertyFromAutomatonBoard(state_at_click_loc, 'i')
-                    self._addStatePropertyToAutomatonBoard(state_at_click_loc, 'a')
-                    return svg_paths.state_accepting_colour, (placement_x, placement_y)
-
-                # then mousePressEvent function will set further properties, such as 'state'
-                # we don't currently use those properties for logging, but they're used by other functions
-                raise Exception('ERROR: item_to_create incorrectly set')
+                # accepting.initial. -> a. -> i. -> neither -> a.i. -> ...
+                if state_at_click_loc.accepting and state_at_click_loc.initial:
+                    # ai -> a
+                    self._removeStatePropertyFromAutomatonBoard(item_at_click_loc, 'i')
+                    item_at_click_loc.toggleInitial()
+                elif state_at_click_loc.accepting and not state_at_click_loc.initial:
+                    # a -> i
+                    self._removeStatePropertyFromAutomatonBoard('i')
+                    self._addStatePropertyToAutomatonBoard('a')
+                    item_at_click_loc.toggleAccepting()
+                    item_at_click_loc.toggleInitial()
+                elif not state_at_click_loc.accepting and state_at_click_loc.initial:
+                    # i -> neither
+                    item_at_click_loc.toggleInitial()
+                    self._removeStatePropertyFromAutomatonBoard(item_at_click_loc, 'i')
+                elif not state_at_click_loc.accepting and not state_at_click_loc.initial:
+                    # neither -> ai
+                    self._addStatePropertyToAutomatonBoard(item_at_click_loc, 'ai')
+                    item_at_click_loc.toggleAccepting()
+                    item_at_click_loc.toggleInitial()
+                return
 
             if user_clicked_empty_space:
                 print('info: user clicked on empty space')
-                return svg_paths.state
-
-            # doesn't seem to ever happen
-            print('ERROR: user click was not assigned to any category')
-            return svg_paths.skip_to_begin
+                print('todo: place an ellipse or something. Probably best done via a new funtion')
+                return
 
         # item_at_loc is a QGraphicsTextItem
+        # todo: review if we still need separate QGraphicsTextItem objects
+        #  or if we can just group them with arrows or something
         else:
             # we create a temporary text box for user to enter a new transition into
             # once the user presses return/enter, takeNewTransitionString() is called, and this text box disappears
@@ -295,7 +244,6 @@ class clickable_qgraphicsview(QGraphicsScene):
             tmp_lineedit.setPlaceholderText("a,b  [TO REMOVE TRANSITION, LEAVE EMPTY, PRESS ENTER]")
 
             self._givenTextitemAddOutboundRules(tmp_lineedit)
-            # print(self.automaton_board)
             tmp_lineedit.setToolTipDuration(2)
             tmp_lineedit.show()
 
@@ -330,6 +278,28 @@ class clickable_qgraphicsview(QGraphicsScene):
             tmp_lineedit.editingFinished.connect(_takeNewTransitionString)
             return self.dont_create
 
+    def _findClosestArrowToGivenCoords(self, coords_tpl):
+        # returns the arrow closest to the coordinates given by coords_tpl
+        coords_x = coords_tpl[0]
+        coords_y = coords_tpl[1]
+        arrow_lst = []
+        for i in self.items():
+            if i.property('arrow'):
+                arrow_lst.append(i)
+
+        min_dist = None
+        closest_arrow = None
+        for s in arrow_lst:
+            dist_from_coords = abs(s.pos().x() - coords_x) + abs(s.pos().y() - coords_y)
+            if not min_dist:
+                min_dist = dist_from_coords
+                closest_arrow = s
+            else:
+                if dist_from_coords < min_dist:
+                    min_dist = dist_from_coords
+                    closest_arrow = s
+        return closest_arrow
+
     def _findClosestStateToGivenCoords(self, coords_tpl):
         # return the state closest to the coordinates given by coords_tpl
         # usually called twice:
@@ -339,7 +309,7 @@ class clickable_qgraphicsview(QGraphicsScene):
         coords_y = coords_tpl[1]
         state_lst = []
         for i in self.items():
-            if i.property('state'):
+            if self._isState(i):
                 state_lst.append(i)
 
         min_dist = None
@@ -449,88 +419,6 @@ class clickable_qgraphicsview(QGraphicsScene):
         #     f"info: origin_state name= {self._getQNameFromState(origin_state)}, target_state= {self._getQNameFromState(target_state)}, transition= {transition}")
         self._addOutboundTransitionToStateInAutomatonBoard(origin_state, target_state, transition)
 
-    def mousePressEvent(self, event):
-        # todo: flesh this out.
-        #  and make the rest of the program respond appropriately
-        #  add behavior for movement
-        # check if any items want to be deleted or moved
-        # for i in self.items():
-        #     if i.property('state'):
-        #         if i.wants_to_be_deleted:
-        #             # remove transitions and remove item itself
-        #             name_to_remove = self._getQNameFromState(i)
-        #             self._removeStateFromAutomatonBoard(name_to_remove)
-        #             print("info: state removed")
-        #             i.deleteLater()
-        #             print(self.automaton_board)
-        #             return
-        #     if i.property('arrow'):
-        #         # todo: fill this in
-        #         pass
-
-        # mouse X, mouse Y
-        x = event.scenePos().x()
-        y = event.scenePos().y()
-
-        # create objects
-        if event.button() == Qt.LeftButton:
-            # retrieve svg item path, and (if given), state placement coordinates
-            # these coordinates can be used to place states
-            svgPath = self._respondToMouseEvents(event)
-            if isinstance(svgPath, tuple):
-                received_placement_coords = svgPath[1]
-                svgPath = svgPath[0]
-
-            if svgPath == self.dont_create:
-                # don't create anything.
-                # this can be desirable when the line edit item is waiting on input
-                # or when the _helper function finds that the new item would overlap an old item
-                return
-
-            if svgPath != None:
-                self.svgItem = svgItem_mod(svgPath)
-
-            else:
-                raise ValueError('Helper function returned no path for mousePressEvent() to use')
-
-            if 'state' in svgPath:
-                if 'accepting' in svgPath:
-                    self.svgItem.setProperty('accepting', 1)
-                if 'initial' in svgPath:
-                    self.svgItem.setProperty('initial', 1)
-                try:
-                    # set coords only for states that are being replaced / having properties modified
-                    self.svgItem.setPos(received_placement_coords[0], received_placement_coords[1])
-                except:
-                    # this will set coords for all new states
-                    # placement_coords = self._setStateCoords(x, y)
-                    # print(
-                    #     'no placement coords received. Not necessarily a problem. Using _setStateCoords values instead')
-                    self.svgItem.setPos(x + self.state_x_offset, y + self.state_y_offset)
-                self.svgItem.setProperty('state', 1)
-                self.svgItem.setScale(self.state_scale)
-                self.svgItem.setToolTip(self._helperReturnStateTooltip())
-
-            self.addItem(self.svgItem)
-
-            # self.force_name indicates that we're renaming a state or changing its properties
-            # we're not adding it, so if self.force_name, we don't add to self.automaton_board
-            # same thing with received_placement_coords
-            # NOTE: this has to be called after _helperReturnStateToolTip because that increments state count
-            # or something like that
-            try:
-                if received_placement_coords:
-                    # print("debug: not adding state to board")
-                    pass
-                elif self.force_name:
-                    # print("debug: not adding state to board")
-                    pass
-            except:
-                self._addStateToAutomatonBoard()
-
-        pass
-
-    # long-ass function factory
     def _addStateToAutomatonBoard(self):
         # add a state to self.automaton_board
         # we just add the latest state (i.e. the highest count)
@@ -745,7 +633,7 @@ class clickable_qgraphicsview(QGraphicsScene):
             for x in self.items():
                 # print("item in self.items()...", x)
                 if isinstance(x, svgItem_mod):
-                    if x.property('state'):
+                    if self._isState(x):
                         # print('info: is state, with text:', x.toolTip())
                         if target_state_name in x.toolTip():
                             target_state = x
@@ -901,6 +789,8 @@ class clickable_qgraphicsview(QGraphicsScene):
             self.state_name_count += 1
             return self.default_state_tooltip.replace("XXX", str(self.state_name_count))
 
+    def _isState(self, c):
+        return isinstance(c, custom_ellipse)
     # def _helperIsClosestGrapicalItemTooClose(self, onscreen_items, user_click_coords, x_threshold, y_threshold):
     # as of yet unused
     # returns True if user requests a new state too close to one already existing, else returns False
