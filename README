@@ -8,5 +8,3 @@ exrex
 PyQt5
 
 LGPL license is for Qt compliance.
-
-Not yet ready for public use (it works, but it's somewhat buggy, and feature-incomplete). A comprehensive rework is in progress
