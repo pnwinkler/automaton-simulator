@@ -1,1 +1,12 @@
 The experimental branch of the project (a comprehensive redesign, which is not yet functional).
+
+A graphical simulator of deterministic finite automata, with quizzing element. Allows user to create and test automata, against randomly generated difficulty-graded regular expressions, or against user-provided strings.
+
+Requires:
+Python 3.5 or newer
+exrex
+PyQt5
+
+LGPL license is for Qt compliance.
+
+Not yet ready for public use (it works, but it's somewhat buggy, and feature-incomplete). A comprehensive rework is in progress
