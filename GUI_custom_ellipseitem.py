@@ -47,3 +47,11 @@ class custom_ellipse(QGraphicsEllipseItem):
 
     def toggleInitial(self):
         pass
+
+    def getCentre(self):
+        # returns the x,y coords of this item's centre as a tuple
+        # might not be exact, but it's close.
+        br = self.boundingRect()
+        x_centre = br.x() + 0.5 * br.width()
+        y_centre = br.y() + 0.5 * br.height()
+        return (x_centre,y_centre)

@@ -5,7 +5,6 @@
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QLineEdit, QPushButton
 from PyQt5.QtCore import Qt, QRect
 from PyQt5.QtGui import QTransform
-from GUI_custom_svgitem import svgItem_mod
 from GUI_custom_ellipseitem import custom_ellipse
 import resources.svg_paths as svg_paths
 
@@ -31,22 +30,10 @@ class clickable_qgraphicsview(QGraphicsScene):
         # so that states get unique names
         self.state_name_count = 0
 
-        # offsets required to have spawned states centre on cursor
-        # should be replaced by smarter code sometime
-        # this is for circular graphics
-        # self.state_x_offset = -33
-        # self.state_y_offset = -33
-        # self.state_scale = 0.09
-
         # offsets for straight lines
         # self.straight_arrows_x_offset = -65
         # self.straight_arrows_y_offset = -10
         # self.straight_arrows_scale = .2
-
-        # complete guess. Used by the state placement function to place states at appropriate distances
-        # from each other (i.e. arrow length distances)
-        # edit as needed
-        # self.arrow_length = 150
 
         # a variable to represent the state of the automaton at any given point
         # used to present the simulation to outside files,
@@ -55,17 +42,19 @@ class clickable_qgraphicsview(QGraphicsScene):
         self.automaton_board = dict()
 
     def mousePressEvent(self, event):
-        # the scene only responds to left clicks
-        # right clicks (such as for menus),
-        # are handled by the objects themselves
-        # they 'receive' the event, for lack of a better term
+        # the scene only responds to left clicks. Right clicks (such as for menus)
+        # are handled by the objects themselves.
         if event.button() != Qt.LeftButton:
             return
 
+        # block below for TESTING PURPOSES ONLY
         # 1) todo: add code to create items and set properties
-        # self.XXXXXXXXXXX.setScale(self.state_scale)
+        self.el = custom_ellipse()
+        self.el.setRect(50,50,120,120)
+        self.addItem(self.el)
+        plt = self.el.getCentre()
+
         # self.XXXXXXXXXXX.setToolTip(self._helperReturnStateTooltip())
-        # self.addItem(self.XXXXXXXXXXXXXX)
 
         # depending on where the user clicks, we may create an object
         # (a state or arrow), or we may alter a state's properties.
@@ -319,7 +308,10 @@ class clickable_qgraphicsview(QGraphicsScene):
             state_size = s.boundingRect().size() * self.state_scale * 0.4
             state_width = state_size.width()
             state_height = state_size.height()
-            state_centre = (s.pos().x() + state_width, s.pos().y() + state_height)
+            # state_centre = (s.pos().x() + state_width, s.pos().y() + state_height)
+            # QGraphicsEllipseItem has no center() method, so we use our own
+            state_centre = s.getCentre()
+
             # these 3 lines demonstrate where the calculated centre is
             # self.tmpitem = QLineEdit(self.parent())
             # self.tmpitem.setGeometry(state_centre[0], state_centre[1], 20, 20)
