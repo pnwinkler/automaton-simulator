@@ -1,3 +1,4 @@
+
 # TODO: REPLACE. IT IS ALL REDUNDANT
 
 # contains the code for custom SVG objects (states and arrows)
@@ -6,7 +7,7 @@
 # could allow us to get rid of the property tags which we're using
 # factory?
 # review this later. For now, there are simplier things that need improving
-
+'''
 from PyQt5 import QtSvg
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtCore import QPoint, Qt
@@ -134,3 +135,4 @@ class svgItem_mod(QtSvg.QGraphicsSvgItem):
             return arrow_shape
         else:
             raise ValueError('invalid shape given to _setupShapes function')
+'''

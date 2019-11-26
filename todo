@@ -1,25 +1,11 @@
-- create and implement control scheme (for automaton creation / manipulation)
-- replace every remaining placeholder on the GUI with function generated strings
-- develop remaining GUI functions, and incorporate external functions
-    correctness informer - we tell the user whether their automaton correctly accepted / rejected all test strings
-        todo: implement as follows:
-         Assert that determineWholeInputAcceptance() passes all pass/fail strings
-          then display this info to the user, via GUI.
-          if it didn't pass, provide a witness. If it did, then inform the user
-- decide what to do with "toggle solution" paraphernalia
-- create remaining graphical elements
-    (initial state
-    active state,
-    most-recently-used-arrow,
-    ...)
+IMMEDIATE GOALS
+- finish conversion to new collision detection and object creation system
+- if "toggle solution" still exists, determine what to do with it
 
-- test finished product on my machine
-- test on clean Ubuntu and Windows VMs
-- provide any documentation needed to get started
-    like a README file
-- eventually, consider replacing PyQt5 with Pyside2==Qt for Python (GPL -> LGPL license)
 
-If any other features need developing, develop them. If time is plenty, add some quality of life / improvement features,
+STRETCH GOALS
+- Implement a requirements file, such that absent/invalid library trigger a response
+- If any other features need developing, develop them. If time is plenty, add some quality of life / improvement features,
 such as:
  TIER 1:
  more attractive UI elements (makes report look better too)
@@ -28,4 +14,7 @@ such as:
  TIER 2:
  resizing (it seems like a grid layout might help), automatic repositioning
 
- Perhaps implement a requirements file, such that absent/invalid library trigger a response
+
+FINAL / ULTIMATE GOALS
+- test on clean Ubuntu and Windows VMs
+- write documentation
