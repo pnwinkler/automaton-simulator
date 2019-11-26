@@ -5,7 +5,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import QFont
-from GUI_custom_scene import clickable_qgraphicsview
+from GUI_custom_scene import clickable_qgraphicsscene
 from GUI_custom_ellipseitem import *
 from generate_strings_from_regex import *
 import automaton_logic as automaton_logic
@@ -13,8 +13,6 @@ import regex_generator as regex_generator
 import resources.svg_paths as svg_paths
 from collections import OrderedDict
 
-# for testing only
-from GUI_custom_svgitem import *
 
 class Ui_MainWindow(object):
     def __init__(self):
@@ -47,32 +45,29 @@ class Ui_MainWindow(object):
         MainWindow.resize(840, 580)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
+
+        # set up the label in the top left
         self.ui_problem_to_solve_tooltip_label = QtWidgets.QLabel(self.centralwidget)
         self.ui_problem_to_solve_tooltip_label.setGeometry(QtCore.QRect(0, 0, 300, 21))
         self.ui_problem_to_solve_tooltip_label.setObjectName("ui_problem_to_solve_tooltip_label")
         self.ui_problem_to_solve_tooltip_label.setFont(QFont("Arial", 12))
 
-        # I have a Qt generated central graphics area, into which I've added my own graphics view
-        # the below creates a QGraphicsView in self.centralwidget, then puts a QGraphicsScene within that view
+        # create a QGraphicsView in self.centralwidget, to house the QGraphicsScene below
         self.mw_central_graphics_area_graphicsView = QtWidgets.QGraphicsView(self.centralwidget)
 
-        # this line controls the size of the scene, that's WITHIN the borders defined below it
-        self.mw_central_graphics_area_graphicsView.setSceneRect(QtCore.QRectF(0, 0, 835, 425))
+        # I don't know to what value to set this, or why it should be that particular value
+        self.mw_central_graphics_area_graphicsView.setSceneRect(QtCore.QRectF(0, 0, 838, 428))
 
         # defines the borders of the graphicsView area. It's within these borders that the scene goes
-        # if the scene is larger than the view's geometry, scroll bars appear
-        # the first large number, the X value, should match that of the parent widget
-        # the second large number defines the cutoff between buttons and the central, white, area
-        self.mw_central_graphics_area_graphicsView.setGeometry(QtCore.QRect(0, 0, 841, 431))
-
+        # if the scene is smaller than the view's geometry, scroll bars appear
+        self.mw_central_graphics_area_graphicsView.setGeometry(QtCore.QRect(0, 0, 840, 430))
         self.mw_central_graphics_area_graphicsView.setObjectName("mw_central_graphics_area_graphicsView")
-        # self.mw_central_graphics_area_graphicsView.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
 
-        # self.mw_central_graphicsScene = QtWidgets.QGraphicsScene(self.mw_central_graphics_area_graphicsView)
         # use our own subclass for the graphics scene
-        self.mw_central_graphicsScene = clickable_qgraphicsview(self.mw_central_graphics_area_graphicsView)
-        # set graphicsView's scene to be our graphicsScene
+        self.mw_central_graphicsScene = clickable_qgraphicsscene(self.mw_central_graphics_area_graphicsView)
         self.mw_central_graphics_area_graphicsView.setScene(self.mw_central_graphicsScene)
+
+        # print(self.centralwidget.size())
 
         # A block of code to put an object on screen. Used in testing sometimes
         # (item size can be changed after being added to scene)

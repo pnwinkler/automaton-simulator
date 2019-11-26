@@ -16,12 +16,12 @@ import resources.svg_paths as svg_paths
 #  make arrows touch states (repositioning not necessary). Optional because user can delete and replace state themselves
 #   get states to spawn in fixed, arrow-length distances from each other
 
-class clickable_qgraphicsview(QGraphicsScene):
+class clickable_qgraphicsscene(QGraphicsScene):
     def __init__(self, parent):
         QGraphicsScene.__init__(self, parent)
-        # the text which appears when a state is moused over. The "XXX" will be replaced
-        # on state creation, as well as when the user requests it (once we implement state renaming)
-        # note that the first sentence must remain in the same format!
+        # Placeholder tooltip. Overwritten on state creation, as well as upon user request
+        # (once we implement state renaming)
+        # note that the first sentence must remain in the same format!!
         # this is because some functions depend on reading this format
         # namely _getQNameFromState and unrelated subfuction connection_options
         self.default_state_tooltip = "State XXX. \nClick centre to change properties\nClick edge to add transition\nRight click to delete, change size, or move"
@@ -29,6 +29,10 @@ class clickable_qgraphicsview(QGraphicsScene):
         # an incrementing count for each created state,
         # so that states get unique names
         self.state_name_count = 0
+
+        # used to set ellipse height and width upon creation
+        self.state_default_width = 50
+        self.state_default_height = 50
 
         # offsets for straight lines
         # self.straight_arrows_x_offset = -65
@@ -47,14 +51,39 @@ class clickable_qgraphicsview(QGraphicsScene):
         if event.button() != Qt.LeftButton:
             return
 
-        # block below for TESTING PURPOSES ONLY
-        # 1) todo: add code to create items and set properties
+        # Incomplete block, for testing purposes.
+        # 1) todo: add code to dynamically create items and set properties
         self.el = custom_ellipse()
-        self.el.setRect(50,50,120,120)
-        self.addItem(self.el)
-        plt = self.el.getCentre()
+        # spawn on mouse click location
+        self.el.setRect(event.scenePos().x(), event.scenePos().y(), self.state_default_width, self.state_default_height)
+        # centre ellipse on mouse click
+        self.el.setPos(self.el.pos().x() - 0.5 * self.el.boundingRect().width(),
+                       self.el.pos().y() - 0.5 * self.el.boundingRect().height())
 
-        # self.XXXXXXXXXXX.setToolTip(self._helperReturnStateTooltip())
+        # boundingRect and pos are coords relative to different objects?
+        # todo: figure out what this stuff means. Research coords & related stuff further
+        '''
+        https://www.qtcentre.org/threads/19457-QGraphicsItem-pos()-and-setpos()
+        Pos and setpos work relative to the parent
+        [...] It means that point (0,0) of the item's local coordinate system is mapped to point (0,0) aka 'the position' 
+        of the parent's coordinate system. In other words setPos() determines where the origin of the item's coordinate 
+        system will be placed relative to the parent
+        
+        No, the item's (0,0) point will cover the (0,0) point of its parent. If you set the child's bounding rect to 
+        (-5,-5,10,10) it would be centered at parent's (0,0) point.
+        # implication is that setpos should be done relative to parent's position? And not, for example, the scene
+        '''
+        # simply using sceneboundingrect instead of boundingrect is incorrect, and will fuck up upon rotations
+        # instead...
+        '''
+        You should save boundingRect(), pos() and transformation matrix to have a complete set of data needed to 
+        recreate the item. sceneBoundingRect() will return wrong values once you start rotating items
+        '''
+        # presumably the "transformation matrix" is some set of values used to convert from one coord system to another
+        # offsets?
+
+        self.addItem(self.el)
+
 
         # depending on where the user clicks, we may create an object
         # (a state or arrow), or we may alter a state's properties.
