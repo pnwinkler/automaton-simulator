@@ -8,14 +8,6 @@ from PyQt5.QtGui import QTransform
 from GUI_custom_ellipseitem import custom_ellipse
 import resources.svg_paths as svg_paths
 
-
-# todo:
-#  allow for diagonal arrows
-#  allow for curved arrows
-#  make curved arrows correctly point to distant states
-#  make arrows touch states (repositioning not necessary). Optional because user can delete and replace state themselves
-#   get states to spawn in fixed, arrow-length distances from each other
-
 class clickable_qgraphicsscene(QGraphicsScene):
     def __init__(self, parent):
         QGraphicsScene.__init__(self, parent)
@@ -51,46 +43,16 @@ class clickable_qgraphicsscene(QGraphicsScene):
         if event.button() != Qt.LeftButton:
             return
 
-        # Incomplete block, for testing purposes.
-        # 1) todo: add code to dynamically create items and set properties
-        self.el = custom_ellipse()
-        # spawn on mouse click location
-        self.el.setRect(event.scenePos().x(), event.scenePos().y(), self.state_default_width, self.state_default_height)
-        # centre ellipse on mouse click
-        self.el.setPos(self.el.pos().x() - 0.5 * self.el.boundingRect().width(),
-                       self.el.pos().y() - 0.5 * self.el.boundingRect().height())
-
-        # boundingRect and pos are coords relative to different objects?
-        # todo: figure out what this stuff means. Research coords & related stuff further
-        '''
-        https://www.qtcentre.org/threads/19457-QGraphicsItem-pos()-and-setpos()
-        Pos and setpos work relative to the parent
-        [...] It means that point (0,0) of the item's local coordinate system is mapped to point (0,0) aka 'the position' 
-        of the parent's coordinate system. In other words setPos() determines where the origin of the item's coordinate 
-        system will be placed relative to the parent
-        
-        No, the item's (0,0) point will cover the (0,0) point of its parent. If you set the child's bounding rect to 
-        (-5,-5,10,10) it would be centered at parent's (0,0) point.
-        # implication is that setpos should be done relative to parent's position? And not, for example, the scene
-        '''
-        # simply using sceneboundingrect instead of boundingrect is incorrect, and will fuck up upon rotations
-        # instead...
-        '''
-        You should save boundingRect(), pos() and transformation matrix to have a complete set of data needed to 
-        recreate the item. sceneBoundingRect() will return wrong values once you start rotating items
-        '''
-        # presumably the "transformation matrix" is some set of values used to convert from one coord system to another
-        # offsets?
-
-        self.addItem(self.el)
-
-
+        # todo: place different objects according to where the user clicks. Set properties if needed
+        # todo: update description below
         # depending on where the user clicks, we may create an object
         # (a state or arrow), or we may alter a state's properties.
         # SCHEME:
         # left click on empty space -> create state
         # left click on state -> change its properties
         # ...
+
+        # click location is only meaningfully measured in terms of scenePos. pos() just gives 0,0
         x = event.scenePos().x()
         y = event.scenePos().y()
 
@@ -114,7 +76,7 @@ class clickable_qgraphicsscene(QGraphicsScene):
             for c in self.items_copy:
                 # c may be any object on screen: a state, an arrow, a textbox...
                 # note that textboxes may soon be abolished
-                is_state = self._isState()
+                is_state = self._isState(c)
                 clicked_obj = c
 
                 size = c.sceneBoundingRect().size()
@@ -129,19 +91,33 @@ class clickable_qgraphicsscene(QGraphicsScene):
                     # reset user_clicked_empty_space. We only want it tracking the last c
                     user_clicked_empty_space = False
 
+                    # why is every custom ellipse seemingly  at -25.5, -25.5?
+                    # this happens even though the ellipses APPEAR to be far from each other
+                    # look to where ellipses are defined and created, for clues
+                    # c.setPos(50,50)
+                    print(c.pos().x(), c.pos().y(), event.pos().x(), event.pos().y())
+
                     # user clicked the central third
                     if abs(x - item_centre[0]) < 0.33 * width \
                             and abs(y - item_centre[1]) < 0.33 * height:
                         user_clicked_state_centre = True
 
+                    # todo: determine why this isn't giving expected value
                     elif c.contains(event.scenePos()):
                         user_clicked_state_edge = True
 
                     else:
                         user_clicked_empty_space = True
-            else:
-                print(
-                    "_respondToMouseEvents / mousePressEvent does not yet have behavior coded here for non-state objects")
+                        print('DEV: item at click loc? : ', self.items_copy)
+                        print(f'DEV: click location in terms of scenePos {event.scenePos().x()}{event.scenePos().y()}')
+                        print(f'DEV: click location in terms of pos {event.pos().x()}{event.pos().y()}')
+                        print(f'DEV: nearby item(s)')
+                        for c in self.items_copy:
+                            print(f'item scenePos({c.scenePos().x()}, {c.scenePos().y()}), item pos({c.pos().x()}, {c.pos().y()})')
+                else:
+                    print(
+                        "_respondToMouseEvents / mousePressEvent does not yet have behavior coded here for non-state objects")
+                    print('todo: decide what to do if the user clicks on an object that is not a state')
             # take action according to where a user clicked (relative to the state)
             if user_clicked_state_edge:
                 # provide connection options to other states
@@ -244,8 +220,31 @@ class clickable_qgraphicsscene(QGraphicsScene):
                 return
 
             if user_clicked_empty_space:
-                print('info: user clicked on empty space')
-                print('todo: place an ellipse or something. Probably best done via a new funtion')
+                print('info: user clicked on empty space. Creating ellipse')
+                self.el = custom_ellipse()
+                # spawn on mouse click location
+                # why does the pos() of the ellipse completely disregard the event's scenePos()?
+                # no matter the scenePos, the new ellipse's scenePos and pos are -25.5, -25.5
+                # the -25.5 comes from the 0.5 * ....
+                # the new ellipse has a scenePos and pos of (0,0)
+                # we're creating ellipses WITHOUT parents, it seems. Is that a problem?
+                print(f'DEBUG XYZZ: event scenePos({event.scenePos().x()},{event.scenePos().y()})')
+                self.el.setRect(event.scenePos().x(),
+                                event.scenePos().y(),
+                                self.state_default_width,
+                                self.state_default_height)
+                # centre ellipse on mouse click
+                self.el.setPos(self.el.pos().x() - 0.5 * self.el.boundingRect().width(),
+                               self.el.pos().y() - 0.5 * self.el.boundingRect().height())
+                self.addItem(self.el)
+                # TODO: figure out why ellipses always claim to be at -25.5, -25.5 scenePos and pos, when created here
+                #  even when they appear in different places
+                # I think lines 229-230 above may be setting it incorrectly. It may appear correct visually, regardless?
+                # probably we have a bad conversion between scenePos and pos systems
+                # really? Idk. Visually it's correct
+                print(f'DEBUG XYZZ: ellipse scenePos({self.el.scenePos().x()},{self.el.scenePos().y()}), ellipse pos({self.el.pos().x()},{self.el.pos().y()})')
+                # print(f'DEBUG XYZZ: ellipse rect')
+                print(self.el.parentItem(), self.el.parentObject(), self.el.parentWidget())
                 return
 
         # item_at_loc is a QGraphicsTextItem

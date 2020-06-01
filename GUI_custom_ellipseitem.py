@@ -1,7 +1,6 @@
 # custom ellipse class to work as a state within the automaton
 # uses parent (ellipse's) drawing and collision detection
 # its only additions are state specific behavior and context options
-import typing
 
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QGraphicsEllipseItem

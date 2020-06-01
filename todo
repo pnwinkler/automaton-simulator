@@ -1,20 +1,44 @@
+RESOLVE THE ELLIPSE COORDINATE / POSSIBLE PARENT PROBLEM
+
 IMMEDIATE GOALS
 - finish conversion to new collision detection and object creation system
+ - resolve any errors that may incur
+ - implement any design/logical changes that that implies
 - if "toggle solution" still exists, determine what to do with it
 
+INTERMEDIATE GOALS
+-  allow for diagonal arrows
+-  allow for curved arrows
+-  make curved arrows correctly point to distant states
+-  make arrows touch states (repositioning not necessary). Optional because user can delete and replace state themselves
+-   get states to spawn in fixed, arrow-length distances from each other
 
 STRETCH GOALS
 - Implement a requirements file, such that absent/invalid library trigger a response
 - If any other features need developing, develop them. If time is plenty, add some quality of life / improvement features,
-such as:
- TIER 1:
- more attractive UI elements (makes report look better too)
- allow for user to rename states
- change state tooltip naming system to one which displays the name in the centre
- TIER 2:
- resizing (it seems like a grid layout might help), automatic repositioning
+ such as:
+  TIER 1:
+   more attractive UI elements (makes report look better too)
+   allow for user to rename states
+   change state tooltip naming system to one which displays the name in the centre
+  TIER 2:
+   resizing (it seems like a grid layout might help), automatic repositioning
 
-
-FINAL / ULTIMATE GOALS
+FINAL GOALS
 - test on clean Ubuntu and Windows VMs
-- write documentation
+- polish documentation
+
+
+TEMP: Useful links for me:
+- explains the relative coordinate system
+https://www.qtcentre.org/threads/19457-QGraphicsItem-pos()-and-setpos()
+    '''
+    # simply using sceneboundingrect instead of boundingrect is incorrect, and will fuck up upon rotations
+    # instead...
+
+    You should save boundingRect(), pos() and transformation matrix to have a complete set of data needed to
+    recreate the item. sceneBoundingRect() will return wrong values once you start rotating items
+
+    # presumably the "transformation matrix" is a set of values (offsets?) used to convert from one coord system
+    to another
+    '''

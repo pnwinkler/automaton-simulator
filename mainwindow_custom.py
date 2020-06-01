@@ -399,8 +399,6 @@ class Ui_MainWindow(object):
         # if it passes a string in the fail category, or fails one in the pass category, we write that
         # to the hint label
 
-        # todo: generate input string
-        # todo: get our reg
         if not self.regex_to_solve:
             print("No regex to solve")
             return
