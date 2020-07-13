@@ -3,22 +3,56 @@
 # its only additions are state specific behavior and context options
 
 from PyQt5.QtCore import QPoint
-from PyQt5.QtWidgets import QGraphicsEllipseItem
+from PyQt5.QtWidgets import QGraphicsEllipseItem, QAction
 from PyQt5.QtWidgets import QMenu
+from PyQt5 import QtGui
+from PyQt5.QtWidgets import QMainWindow, QAction, qApp, QApplication
+from PyQt5.QtGui import QIcon
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 class custom_ellipse(QGraphicsEllipseItem):
     def __init__(self, *args, **kwargs):
         QGraphicsEllipseItem.__init__(self, *args, **kwargs)
-        print("CUSTOM ELLIPSE ITEM CREATED")
+        logger.debug("CUSTOM ELLIPSE ITEM CREATED")
         self.accepting = False
         self.initial = False
+        # this has no parent. It should probably be placed on the scene?
+        # print('debug123', self.parentItem())
+        # print('debug123', self.parentWidget())
+        # print('debug123', self.parentObject())
 
     def contextMenuEvent(self, event):
         # add right click behavior (if relevant)
-        menu = QMenu(QGraphicsEllipseItem)
+        # menu = QMenu(QGraphicsEllipseItem)
+        menu = QMenu()
+        '''
+        # removing the parameter lets it spawn, but far away in the top left.
+        # I need to determine: does the menu need to be child to the ellipse?
+        # or just appear in the right place?
+        # making it a child would allow for easier references to its parent
+        # Docs say: 
+            Although a popup menu is always a top-level widget, 
+            if a parent is passed the popup menu will be deleted when
+            that parent is destroyed (as with any other QObject).
+        
+        TypeError: arguments did not match any overloaded call:
+        QMenu(parent: QWidget = None): argument 1 has unexpected type 'sip.wrappertype'
+        QMenu(str, parent: QWidget = None): argument 1 has unexpected type 'sip.wrappertype'
+        '''
+        # note that actions can have icons and shortcuts. That might be nice.
         delete_action = menu.addAction("Delete object")
-        move_actionl = menu.addAction("TK: Placeholder: Move state")
+        delete_action.setStatusTip("Exit the program")
+        menu.addAction(delete_action)
+        move_action = menu.addAction("TK: Placeholder: Move state")
         cancel_action = menu.addAction("Cancel")
+        # delete_action.triggered.connect(quit())
+        # needs a very specific format. Specifically a function (lambda or declared elsewhere). self.hide() by itself autotriggers.
+        # PLACEHOLDER
+        delete_action.triggered.connect(lambda x: self.delete(self))
+
 
         action = menu.exec(QPoint(self.pos().x(), self.pos().y()))
 

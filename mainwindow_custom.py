@@ -474,7 +474,10 @@ class Ui_MainWindow(object):
 
         self.skipToBegin()
         while len(self.mw_current_line_lbl.text()) != len_contents_before + 1:
-            self.stepForwards()
+            retval = self.stepForwards()
+            if retval == -1:
+                # otherwise we get "No valid automaton" spam
+                break
 
     def stepForwards(self):
         # todo:
@@ -484,10 +487,10 @@ class Ui_MainWindow(object):
         #   and what the graphical element that we want to adjust / unadjust is. Or just scale
         if not self.automaton:
             print("No valid automaton. If you've created one, please click the Update Automaton button")
-            return
+            return -1
         if not self.user_string:
             print("No user string provided. Please enter it into the text field in the middle, then press enter")
-            return
+            return -1
 
         # print("DEBUG: self.user_string", self.user_string)
         try:
@@ -518,8 +521,14 @@ class Ui_MainWindow(object):
     def skipToEnd(self):
         # the +1 is important! We use it to test whether the automaton accepts "" at the end of the string
         # i.e. is the final state accepting?
-        for c in range(len(self.user_string) + 1):
-            self.stepForwards()
+        if self.user_string is not None:
+            for c in range(len(self.user_string) + 1):
+                self.stepForwards()
+        else:
+            # I don't think we need to show this to the user within the GUI right?
+            # actually, at some point it's worth doing so. Just create a short-lived label
+            # that draws their attention, then disappears
+            print("Cannot progress automaton. No user string provided to test against.")
 
     def progressLiveFeed(self):
         # updates the "live" processing area, below the box where the user entered the string.

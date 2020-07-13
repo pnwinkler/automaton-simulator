@@ -7,6 +7,12 @@ from PyQt5.QtCore import Qt, QRect
 from PyQt5.QtGui import QTransform
 from GUI_custom_ellipseitem import custom_ellipse
 import resources.svg_paths as svg_paths
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+# logger.debug("HI")
+
 
 class clickable_qgraphicsscene(QGraphicsScene):
     def __init__(self, parent):
@@ -113,7 +119,8 @@ class clickable_qgraphicsscene(QGraphicsScene):
                         print(f'DEV: click location in terms of pos {event.pos().x()}{event.pos().y()}')
                         print(f'DEV: nearby item(s)')
                         for c in self.items_copy:
-                            print(f'item scenePos({c.scenePos().x()}, {c.scenePos().y()}), item pos({c.pos().x()}, {c.pos().y()})')
+                            print(
+                                f'item scenePos({c.scenePos().x()}, {c.scenePos().y()}), item pos({c.pos().x()}, {c.pos().y()})')
                 else:
                     print(
                         "_respondToMouseEvents / mousePressEvent does not yet have behavior coded here for non-state objects")
@@ -242,7 +249,8 @@ class clickable_qgraphicsscene(QGraphicsScene):
                 # I think lines 229-230 above may be setting it incorrectly. It may appear correct visually, regardless?
                 # probably we have a bad conversion between scenePos and pos systems
                 # really? Idk. Visually it's correct
-                print(f'DEBUG XYZZ: ellipse scenePos({self.el.scenePos().x()},{self.el.scenePos().y()}), ellipse pos({self.el.pos().x()},{self.el.pos().y()})')
+                print(
+                    f'DEBUG XYZZ gcs.py: ellipse scenePos({self.el.scenePos().x()},{self.el.scenePos().y()}), ellipse pos({self.el.pos().x()},{self.el.pos().y()})')
                 # print(f'DEBUG XYZZ: ellipse rect')
                 print(self.el.parentItem(), self.el.parentObject(), self.el.parentWidget())
                 return
