@@ -19,9 +19,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-# logger.debug("HI")
-
-
 class clickable_qgraphicsscene(QGraphicsScene):
     def __init__(self, parent):
         QGraphicsScene.__init__(self, parent)
@@ -30,11 +27,12 @@ class clickable_qgraphicsscene(QGraphicsScene):
         # note that the first sentence must remain in the same format!!
         # this is because some functions depend on reading this format
         # namely _getQNameFromState and unrelated subfuction connection_options
-        self.default_state_tooltip = "State XXX. \nClick centre to change properties\nClick edge to add transition\nRight click to delete, change size, or move"
+        # todo: reimplement with setters, so the user knows what they can do.
+        # self.default_state_tooltip = "State XXX. \nClick centre to change properties\nClick edge to add transition\nRight click to delete, change size, or move"
 
         # an incrementing count for each created state,
-        # so that states get unique names
-        self.state_name_count = 0
+        # so that states get unique IDs
+        self.state_count = 0
 
         # used to set ellipse height and width upon creation
         self.state_default_width = 50
@@ -54,8 +52,6 @@ class clickable_qgraphicsscene(QGraphicsScene):
     def mousePressEvent(self, event):
         # should be put into a behaviours file imo. Makes this file more legible.
         # be wary of import problems / problems accessing "self" or whatever
-        if event.button() != Qt.LeftButton:
-            return
 
         # todo: update description below, once stuff is implemented.
         # depending on where the user clicks, we trigger a different behavior
@@ -85,7 +81,8 @@ class clickable_qgraphicsscene(QGraphicsScene):
         if not item_at_click_loc:
             # Behavior 1) create ellipse
             print('info: user clicked on empty space. Creating ellipse')
-            self.el = custom_ellipse()
+            self.el = custom_ellipse(name="State " + str(self.state_count), ID_num=self.state_count)
+            self.state_count += 1
             self.el.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
             # spawn on mouse click location
             # Concerns:
@@ -109,7 +106,6 @@ class clickable_qgraphicsscene(QGraphicsScene):
             self.addItem(self.el)
             # I'm not setting properties automatically. I'll leave that up to the user for now.
             return
-
 
         if isinstance(item_at_click_loc, custom_ellipse):
             # TODO: code for dragging behavior
@@ -145,82 +141,12 @@ class clickable_qgraphicsscene(QGraphicsScene):
             elif event.button() == Qt.RightButton:
                 # Behavior 4) spawn menu
                 # todo: spawn menu and stuff
-
-                pass
-            else:
-                # neither left nor right click on state
-                return
-
-
-
-
-        if not isinstance(item_at_click_loc, QGraphicsTextItem):
-            # Determine where (relative to on-screen icons) a user clicked
-            # so that we can repond appropriately
-            user_clicked_state_centre = False
-            user_clicked_state_edge = False
-            user_clicked_empty_space = False
-
-            self.items_copy = self.items()
-
-            if len(self.items_copy) == 0:
-                user_clicked_empty_space = True
-
-            for c in self.items_copy:
-                # c may be any object on screen: a state, an arrow, a textbox...
-                # note that textboxes may soon be abolished
-                is_state = self._isState(c)
-                clicked_obj = c
-
-                # note that QRectF has methods like bottomLeft() and center() !!
-                width = c.boundingRect().width()
-                height = c.boundingRect().height()
-                item_centre = (c.boundingRect().center().x(), c.boundingRect().center().y())
-
-                # we determine where (relative to each item in self.items) the user clicked
-                # so we can set execute appropriate behaviour later
-                if is_state:
-                    # reset user_clicked_empty_space. We only want it tracking the last c
-                    user_clicked_empty_space = False
-
-                    # why is every custom ellipse seemingly  at -25.5, -25.5?
-                    # this happens even though the ellipses APPEAR to be far from each other
-                    # look to where ellipses are defined and created, for clues
-                    # c.setPos(50,50)
-                    print("info: user clicked on state")
-                    print("DEBUG: c.pos().x(), c.pos().y(), event.pos().x(), event.pos().y()", end='\n\t')
-                    print(c.pos().x(), c.pos().y(), event.pos().x(), event.pos().y())
-
-                    # user clicked the central third
-                    if abs(x - item_centre[0]) < 0.33 * width \
-                            and abs(y - item_centre[1]) < 0.33 * height:
-                        user_clicked_state_centre = True
-
-                    # todo: determine why this isn't giving expected value
-                    elif c.contains(event.scenePos()):
-                        user_clicked_state_edge = True
-
-                    else:
-                        user_clicked_empty_space = True
-                        print('DEV: item at click loc? : ', self.items_copy)
-                        print(f'DEV: click location in terms of scenePos {event.scenePos().x()}{event.scenePos().y()}')
-                        print(f'DEV: click location in terms of pos {event.pos().x()}{event.pos().y()}')
-                        print(f'DEV: nearby item(s)')
-                        for c in self.items_copy:
-                            print(
-                                f'item scenePos({c.scenePos().x()}, {c.scenePos().y()}), item pos({c.pos().x()}, {c.pos().y()})')
-                else:
-                    print(
-                        "_respondToMouseEvents / mousePressEvent does not yet have behavior coded here for non-state objects")
-                    print('todo: decide what to do if the user clicks on an object that is not a state')
-            # take action according to where a user clicked (relative to the state)
-            if user_clicked_state_edge:
                 # provide connection options to other states
                 connection_options = []
-                for i in self.items_copy:
+                for i in self.items():
                     if isinstance(i, custom_ellipse):
                         state_count += 1
-                        if i == clicked_obj:
+                        if i == item_at_click_loc:
                             pass
                         else:
                             # adds a reference to that object to connection_options
@@ -229,12 +155,14 @@ class clickable_qgraphicsscene(QGraphicsScene):
                 # we want min 2 states if we are to provide a transition arrow
                 if state_count < 2:
                     print('state_count', state_count)
+                    # consider giving the user this info on-screen
                     print('No two states to connect! Please add a state by clicking in empty space')
+                    return
                 else:
-                    available_ops = []
+                    self.available_ops = []
                     for state in range(state_count):
                         # each QPushButton is a connection option, targeting another state
-                        available_ops.append(QPushButton(self.parent()))
+                        self.available_ops.append(QPushButton(self.parent()))
 
                     # option_count reflects the number of connection options
                     # it's used as an index, to set the correct state names
@@ -244,106 +172,252 @@ class clickable_qgraphicsscene(QGraphicsScene):
                     for co in connection_options:
                         # examines the tooltip of each object in connection_options
                         # to determine its name - how its name will be represented
-                        # to the user
+                        # to the user.
                         # expects a '.' after the state
                         state_names.append(co.toolTip().split('.')[0])
 
-                        # sets the size and text of each menu option
-                        available_ops[option_count].setGeometry(300, 200 + 30 * option_count, 200, 30)
-                        available_ops[option_count].setText("Connect to: " + state_names[option_count])
+                        # todo: set the size and text of each menu option
 
-                        item_at_click_loc = self.itemAt(x, y, QTransform())
+                        # item_at_click_loc = self.itemAt(x, y, QTransform())
 
                         # these 2 vars are used by other functions:
                         # closeOptionsMenu and _closureconnectTwoStates
-                        self.item_at_click_loc_COPY = item_at_click_loc
-                        self.available_ops_COPY = available_ops
+                        # self.item_at_click_loc_COPY = item_at_click_loc
+                        # self.available_ops_COPY = available_ops
 
-                        ## we need this hacky solution to a fringe error
-                        ## namely when the user creates 2 states, then clicks NEAR but not on one
-                        ## item_at_click_loc is set to None and the connectTwoStates function throws an error
-                        ## note that the 130 is guesswork and this whole block should be replaced
-                        ## by something more sensible
-                        if not item_at_click_loc:
-                            raise ValueError(
-                                'No item at click_loc. Might need to reimplement the lines below this. Or just review stuff generally')
+                        # we need this hacky solution to a fringe error
+                        # namely when the user creates 2 states, then clicks NEAR but not on one
+                        # item_at_click_loc is set to None and the connectTwoStates function throws an error
+                        # note that the 130 is guesswork and this whole block should be replaced
+                        # by something more sensible
+                        # if not item_at_click_loc:
+                        #     raise ValueError(
+                        #         'No item at click_loc. Might need to reimplement the lines below this. Or just review stuff generally')
 
                         # we pass this text (which mentions the state name) to _connectTwoStates()
                         # so it can find itself the correct target state, as it receives the text
                         # of the clicked QPushButton passed in
-                        text_to_attach = available_ops[option_count].text()
-                        available_ops[option_count].clicked.connect(self._closureconnectTwoStates(text_to_attach))
+                        text_to_attach = self.available_ops[option_count].text()
+                        self.available_ops[option_count].clicked.connect(self._closureconnectTwoStates(item_at_click_loc, co))
+                        self.available_ops[option_count].setGeometry(300, 200 + 30 * option_count, 200, 30)
+                        self.available_ops[option_count].setText("Connect to: " + co.name)
 
-                        available_ops[option_count].show()
+
+                        self.available_ops[option_count].show()
                         option_count += 1
 
                     op_cancel = QPushButton(self.parent())
-                    available_ops.append(op_cancel)
+                    self.available_ops.append(op_cancel)
                     op_cancel.setGeometry(300, 200 + 30 * option_count, 200, 30)
                     op_cancel.clicked.connect(self._closeOptionsMenu)
                     op_cancel.setText("Cancel")
                     op_cancel.show()
+            else:
+                # neither left nor right click on state
                 return
 
-            if user_clicked_state_centre:
-                # toggle state properties (accepting, initial)
-                # each time the user clicks a state centre
-                # this affects state appearance too
-                # the clicked-on object is modified in place. It's not replaced
-                state_at_click_loc = item_at_click_loc
 
-                # accepting.initial. -> a. -> i. -> neither -> a.i. -> ...
-                if state_at_click_loc.accepting and state_at_click_loc.initial:
-                    # ai -> a
-                    self._removeStatePropertyFromAutomatonBoard(item_at_click_loc, 'i')
-                    item_at_click_loc.toggleInitial()
-                elif state_at_click_loc.accepting and not state_at_click_loc.initial:
-                    # a -> i
-                    self._removeStatePropertyFromAutomatonBoard('i')
-                    self._addStatePropertyToAutomatonBoard('a')
-                    item_at_click_loc.toggleAccepting()
-                    item_at_click_loc.toggleInitial()
-                elif not state_at_click_loc.accepting and state_at_click_loc.initial:
-                    # i -> neither
-                    item_at_click_loc.toggleInitial()
-                    self._removeStatePropertyFromAutomatonBoard(item_at_click_loc, 'i')
-                elif not state_at_click_loc.accepting and not state_at_click_loc.initial:
-                    # neither -> ai
-                    self._addStatePropertyToAutomatonBoard(item_at_click_loc, 'ai')
-                    item_at_click_loc.toggleAccepting()
-                    item_at_click_loc.toggleInitial()
-                return
+        # if not isinstance(item_at_click_loc, QGraphicsTextItem):
+        #     # Determine where (relative to on-screen icons) a user clicked
+        #     # so that we can repond appropriately
+        #     user_clicked_state_centre = False
+        #     user_clicked_state_edge = False
+        #     user_clicked_empty_space = False
+        #
+        #     self.items_copy = self.items()
+        #
+        #     if len(self.items_copy) == 0:
+        #         user_clicked_empty_space = True
+        #
+        #     for c in self.items_copy:
+        #         # c may be any object on screen: a state, an arrow, a textbox...
+        #         # note that textboxes may soon be abolished
+        #         is_state = self._isState(c)
+        #         clicked_obj = c
+        #
+        #         # note that QRectF has methods like bottomLeft() and center() !!
+        #         width = c.boundingRect().width()
+        #         height = c.boundingRect().height()
+        #         item_centre = (c.boundingRect().center().x(), c.boundingRect().center().y())
+        #
+        #         # we determine where (relative to each item in self.items) the user clicked
+        #         # so we can set execute appropriate behaviour later
+        #         if is_state:
+        #             # reset user_clicked_empty_space. We only want it tracking the last c
+        #             user_clicked_empty_space = False
+        #
+        #             # why is every custom ellipse seemingly  at -25.5, -25.5?
+        #             # this happens even though the ellipses APPEAR to be far from each other
+        #             # look to where ellipses are defined and created, for clues
+        #             # c.setPos(50,50)
+        #             print("info: user clicked on state")
+        #             print("DEBUG: c.pos().x(), c.pos().y(), event.pos().x(), event.pos().y()", end='\n\t')
+        #             print(c.pos().x(), c.pos().y(), event.pos().x(), event.pos().y())
+        #
+        #             # user clicked the central third
+        #             if abs(x - item_centre[0]) < 0.33 * width \
+        #                     and abs(y - item_centre[1]) < 0.33 * height:
+        #                 user_clicked_state_centre = True
+        #
+        #             # todo: determine why this isn't giving expected value
+        #             elif c.contains(event.scenePos()):
+        #                 user_clicked_state_edge = True
+        #
+        #             else:
+        #                 user_clicked_empty_space = True
+        #                 print('DEV: item at click loc? : ', self.items_copy)
+        #                 print(f'DEV: click location in terms of scenePos {event.scenePos().x()}{event.scenePos().y()}')
+        #                 print(f'DEV: click location in terms of pos {event.pos().x()}{event.pos().y()}')
+        #                 print(f'DEV: nearby item(s)')
+        #                 for c in self.items_copy:
+        #                     print(
+        #                         f'item scenePos({c.scenePos().x()}, {c.scenePos().y()}), item pos({c.pos().x()}, {c.pos().y()})')
+        #         else:
+        #             print(
+        #                 "_respondToMouseEvents / mousePressEvent does not yet have behavior coded here for non-state objects")
+        #             print('todo: decide what to do if the user clicks on an object that is not a state')
+            # take action according to where a user clicked (relative to the state)
+            # if user_clicked_state_edge:
+                # provide connection options to other states
+                # connection_options = []
+                # for i in self.items_copy:
+                #     if isinstance(i, custom_ellipse):
+                #         state_count += 1
+                #         if i == clicked_obj:
+                #             pass
+                #         else:
+                #             # adds a reference to that object to connection_options
+                #             connection_options.append(i)
+                #
+                # # we want min 2 states if we are to provide a transition arrow
+                # if state_count < 2:
+                #     print('state_count', state_count)
+                #     print('No two states to connect! Please add a state by clicking in empty space')
+                # else:
+                #     # make this shared file-wide, so other functions can access it
+                #     # e.g. closeOptionsMenu and _closureconnectTwoStates
+                #     self.available_ops = []
+                #     for state in range(state_count):
+                #         # each QPushButton is a connection option, targeting another state
+                #         self.available_ops.append(QPushButton(self.parent()))
+                #
+                #     # option_count reflects the number of connection options
+                #     # it's used as an index, to set the correct state names
+                #     # and adjust y offsets, so that the QPushButtons below do not stack
+                #     option_count = 0
+                #     state_names = []
+                #     for co in connection_options:
+                #         # examines the tooltip of each object in connection_options
+                #         # to determine its name - how its name will be represented
+                #         # to the user
+                #         # expects a '.' after the state
+                #         state_names.append(co.toolTip().split('.')[0])
+                #
+                #         # sets the size and text of each menu option
+                #         # available_ops[option_count].setGeometry(300, 200 + 30 * option_count, 200, 30)
+                #         # available_ops[option_count].setText("Connect to: " + state_names[option_count])
+                #         self.available_ops[option_count].setGeometry(300, 200 + 30 * option_count, 200, 30)
+                #         self.available_ops[option_count].setText("Connect to: " + state_names[option_count])
+                #
+                #         # item_at_click_loc = self.itemAt(x, y, QTransform())
+                #         self.item_at_click_loc = self.itemAt(x, y, QTransform())
+                #         # these 2 vars are used by other functions:
+                #         # closeOptionsMenu and _closureconnectTwoStates
+                #         # self.item_at_click_loc_COPY = item_at_click_loc
+                #         # self.available_ops_COPY = available_ops
+                #
+                #         ## we need this hacky solution to a fringe error
+                #         ## namely when the user creates 2 states, then clicks NEAR but not on one
+                #         ## item_at_click_loc is set to None and the connectTwoStates function throws an error
+                #         ## note that the 130 is guesswork and this whole block should be replaced
+                #         ## by something more sensible
+                #         if not item_at_click_loc:
+                #             raise ValueError(
+                #                 'No item at click_loc. Might need to reimplement the lines below this. Or just review stuff generally')
+                #
+                #         # we pass this text (which mentions the state name) to _connectTwoStates()
+                #         # so it can find itself the correct target state, as it receives the text
+                #         # of the clicked QPushButton passed in
+                #         text_to_attach = self.available_ops[option_count].text()
+                #         self.available_ops[option_count].clicked.connect(self._closureconnectTwoStates(text_to_attach))
+                #
+                #         self.available_ops[option_count].show()
+                #         option_count += 1
+                #
+                #     op_cancel = QPushButton(self.parent())
+                #     self.available_ops.append(op_cancel)
+                #     op_cancel.setGeometry(300, 200 + 30 * option_count, 200, 30)
+                #     op_cancel.clicked.connect(self._closeOptionsMenu)
+                #     op_cancel.setText("Cancel")
+                #     op_cancel.show()
+                # return
 
-            if user_clicked_empty_space:
-                print('info: user clicked on empty space. Creating ellipse')
-                self.el = custom_ellipse()
-                # self.el.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
-                # spawn on mouse click location
-                # Concerns:
-                # 1) although the event scenePos seems always correct,
-                # the ellipse's scenePos and pos are always (-25.5, -25.5)
-                # 2) the ellipses have no parents, be they Item, Object or Widget
-                # !!! HOWEVER, we still have access to useful coords via: !!!
-                # print(self.el.mapToScene(self.el.boundingRect().center()))
-                # I think that nullifies the 2 problems above, but I still want them to be noted.
-                print(f'DEBUG XYZZ_1: event scenePos({event.scenePos().x()},{event.scenePos().y()})')
+            # if user_clicked_state_centre:
+            #     # toggle state properties (accepting, initial)
+            #     # each time the user clicks a state centre
+            #     # this affects state appearance too
+            #     # the clicked-on object is modified in place. It's not replaced
+            #     state_at_click_loc = item_at_click_loc
+            #
+            #     # accepting.initial. -> a. -> i. -> neither -> a.i. -> ...
+            #     if state_at_click_loc.accepting and state_at_click_loc.initial:
+            #         # ai -> a
+            #         self._removeStatePropertyFromAutomatonBoard(item_at_click_loc, 'i')
+            #         item_at_click_loc.toggleInitial()
+            #     elif state_at_click_loc.accepting and not state_at_click_loc.initial:
+            #         # a -> i
+            #         self._removeStatePropertyFromAutomatonBoard('i')
+            #         self._addStatePropertyToAutomatonBoard('a')
+            #         item_at_click_loc.toggleAccepting()
+            #         item_at_click_loc.toggleInitial()
+            #     elif not state_at_click_loc.accepting and state_at_click_loc.initial:
+            #         # i -> neither
+            #         item_at_click_loc.toggleInitial()
+            #         self._removeStatePropertyFromAutomatonBoard(item_at_click_loc, 'i')
+            #     elif not state_at_click_loc.accepting and not state_at_click_loc.initial:
+            #         # neither -> ai
+            #         self._addStatePropertyToAutomatonBoard(item_at_click_loc, 'ai')
+            #         item_at_click_loc.toggleAccepting()
+            #         item_at_click_loc.toggleInitial()
+            #     return
 
-                # set size
-                self.el.setRect(event.scenePos().x(),
-                                event.scenePos().y(),
-                                self.state_default_width,
-                                self.state_default_height)
-                # centre ellipse on mouse click
-                self.el.setPos(self.el.pos().x() - 0.5 * self.el.boundingRect().width(),
-                               self.el.pos().y() - 0.5 * self.el.boundingRect().height())
-                self.el.mapToScene(event.scenePos().x(), event.scenePos().y())
-                self.addItem(self.el)
-                return
+            # if user_clicked_empty_space:
+            #     print('info: user clicked on empty space. Creating ellipse')
+            #     self.el = custom_ellipse()
+            #     # self.el.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
+            #     # spawn on mouse click location
+            #     # Concerns:
+            #     # 1) although the event scenePos seems always correct,
+            #     # the ellipse's scenePos and pos are always (-25.5, -25.5)
+            #     # 2) the ellipses have no parents, be they Item, Object or Widget
+            #     # !!! HOWEVER, we still have access to useful coords via: !!!
+            #     # print(self.el.mapToScene(self.el.boundingRect().center()))
+            #     # I think that nullifies the 2 problems above, but I still want them to be noted.
+            #     print(f'DEBUG XYZZ_1: event scenePos({event.scenePos().x()},{event.scenePos().y()})')
+            #
+            #     # set size
+            #     self.el.setRect(event.scenePos().x(),
+            #                     event.scenePos().y(),
+            #                     self.state_default_width,
+            #                     self.state_default_height)
+            #     # centre ellipse on mouse click
+            #     self.el.setPos(self.el.pos().x() - 0.5 * self.el.boundingRect().width(),
+            #                    self.el.pos().y() - 0.5 * self.el.boundingRect().height())
+            #     self.el.mapToScene(event.scenePos().x(), event.scenePos().y())
+            #     self.addItem(self.el)
+            #     return
 
         # item_at_loc is a QGraphicsTextItem
         # todo: review if we still need separate QGraphicsTextItem objects
         #  or if we can just group them with arrows or something
-        else:
+        # NOTE! this must match the type of the object visually indicating transitions between states
+        # TODO: review this logic. It's flawed. How can you create a line item if you need to first click on one to create it?
+        # on 2nd thoughts, that's fine. But the user does need to be prompted to give a transition letter
+        # and be allowed to change it/them when they please.
+        # so for now this is defunct.
+        # also, there needs to be an easy way to change transitions. To click on a LineItem is to pixel hunt
+        elif isinstance(item_at_click_loc, QGraphicsLineItem):
+            # create an outbound transition
             # we create a temporary text box for user to enter a new transition into
             # once the user presses return/enter, takeNewTransitionString() is called, and this text box disappears
             # and a new textitem appears in its place, displaying the new transition
@@ -724,51 +798,51 @@ class clickable_qgraphicsscene(QGraphicsScene):
         for i in available_ops:
             i.deleteLater()
 
-    def _closureconnectTwoStates(self, target_state_tooltip):
+    def _return_target_state(self, target_name):
+        # idk why we're using names instead of IDs
+        # todo: determine which and why
+        # takes string parameter, the identifier of a state
+        target_state = None
+        for x in self.items():
+            if self._isState(x):
+                if x.name == target_name:
+                    target_state = x
+                    break
+        if not target_state:
+            raise ValueError(f'Target state, name="{target_name}" not found')  # programming error. Should never happen. Has yet to happen.
+
+    def _closureconnectTwoStates(self, origin_state, target_state):
+        # takes 2 custom_ellipseitem objects and returns a function to connect them
+        # cannot connect them directly because menu, or QButton objects, need to be connected to functions
+        # for our purposes, these functions must be unique (i.e. no identical origin target pair)
+        # therefore, we must create however many unique functions
         def _connectTwoStates():
-            '''
-            # CONSIDER. Just need to optionally replace centre with point on edge.
-            # But this is way simpler than stuff below 
-            start = e1.mapToScene(e1.boundingRect().center())
-            end = e2.mapToScene(e2.boundingRect().center())
+            # todo: get arrow to spawn from edge not centre.
+            # todo: replace line with arrow (our SVG thing?)
+            start = origin_state.mapToScene(origin_state.boundingRect().center())
+            end = target_state.mapToScene(target_state.boundingRect().center())
             l = QGraphicsLineItem(QLineF(start, end))
-            scene.addItem(l)
-            '''
-            # connects origin state and target state with an arrow via their closest corners
-            # will (soon) provide curved arrows in cases where there's a state between orig.. and target
-            # also controls the orientation of arrows
-            # and provides curved arrows when needed
-            # and sets the textbox over arrows to the appropriate spot when arrows are scaled
 
-            # the state from which our arrow emerges
-            # print(f"info: self_args = {self._args}")
-            originatingState = self.item_at_click_loc_COPY
+            # target_state_name = target_state.tooltip.replace("Connect to: ", "").replace("Connect to:", "")
+            self.addItem(l)
+            l.show()
 
-            # the set of QPushButtons, one of which was pressed, to bring the user here.
-            # deleted below
-            available_ops = self.available_ops_COPY
-
-            # grab the tooltip so we can identify the target state by its tooltip
-            target_state_name = target_state_tooltip.replace("Connect to: ", "").replace("Connect to:", "")
-            # print(f"info: target_state_name: '{target_state_name}'")
-            for x in self.items():
-                # print("item in self.items()...", x)
-                if isinstance(x, svgItem_mod):
-                    if self._isState(x):
-                        # print('info: is state, with text:', x.toolTip())
-                        if target_state_name in x.toolTip():
-                            target_state = x
-            if not target_state:
-                print(f'Failed to find: "{target_state_name}"')
-                raise ValueError('Target state not found')  # programming error. Should never happen. Has yet to happen.
-
-            # the user has clicked one of the QPushButtons, so we delete all buttons in the group
-            for i in available_ops:
+            # this function is only called when the user has clicked to request a connection between states
+            # therefore, we can delete all of the QPushButtons in the group
+            for i in self.available_ops:
                 i.deleteLater()
 
-            # determine the size, width, height of the origin and target states
-            # so that we can determine corners correctly, and therefore place arrows correctly
-            origin_size = originatingState.boundingRect().size() * self.state_scale * 0.4
+            # todo: fill in
+            # this will be the code which will make arrows spawn from the cardinal directions of a state
+            # rather than its centre
+            origin_corners = None
+            target_corner = None
+
+            # todo: complete this function
+            return
+
+            # todo: replace with something more elegant. Like using boundingRect
+            origin_size = origin_state.boundingRect().size() * self.state_scale * 0.4
             origin_width = origin_size.width()
             origin_height = origin_size.height()
             target_size = target_state.boundingRect().size() * self.state_scale * 0.4

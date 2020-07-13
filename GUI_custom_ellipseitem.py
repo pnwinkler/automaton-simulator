@@ -14,11 +14,15 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 class custom_ellipse(QGraphicsEllipseItem):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, name, ID_num, *args, **kwargs):
         QGraphicsEllipseItem.__init__(self, *args, **kwargs)
         logger.debug("CUSTOM ELLIPSE ITEM CREATED")
         self.accepting = False
         self.initial = False
+        # ID is unique identifier
+        self.ID_num = ID_num
+        # name is whatever the user wants.
+        self.name = name
 
     def toggleInitial(self):
         self.initial = not self.initial
