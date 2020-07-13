@@ -19,11 +19,12 @@ class custom_ellipse(QGraphicsEllipseItem):
         logger.debug("CUSTOM ELLIPSE ITEM CREATED")
         self.accepting = False
         self.initial = False
-        # this has no parent. It should probably be placed on the scene?
-        # print('debug123', self.parentItem())
-        # print('debug123', self.parentWidget())
-        # print('debug123', self.parentObject())
 
+    def toggleInitial(self):
+        self.initial = not self.initial
+        
+    def toggleAccepting(self):
+        self.accepting = not self.accepting
 
     # def mouseReleaseEvent(self, event):
     #     # Do your stuff here.

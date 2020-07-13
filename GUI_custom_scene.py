@@ -61,9 +61,10 @@ class clickable_qgraphicsscene(QGraphicsScene):
         # depending on where the user clicks, we trigger a different behavior
         # BEHAVIOR SCHEME:
         # 1) left click on empty space -> create state
-        # 2) left click on state -> change its properties (best handled in custom ellipse item?)
-        # 3) right click on state -> bring up options menu. Idk where this is best implemented. Probably here? Consistent?
-        # 4) left click on arrow -> we change its transition character.
+        # 2) left click on state -> change its properties
+        # 3) left drag on state -> move state & associated transitions
+        # 4) right click on state -> bring up options menu. Idk where this is best implemented. Probably here? Consistent?
+        # 5) left click on arrow -> we change its transition character.
         # ...
 
         # click location is only meaningfully measured in terms of scenePos(). pos() just gives 0,0
@@ -79,45 +80,76 @@ class clickable_qgraphicsscene(QGraphicsScene):
         #   but there's no need to click on or near a state edge in our current control scheme
         item_at_click_loc = self.itemAt(x, y, QTransform())
 
-        # # TODO: REDO ALL THIS STUFF below
-        # # then move into its own file, probably
-        # if not item_at_click_loc:
-        #     # Behavior 1) create ellipse
-        #     print('info: user clicked on empty space. Creating ellipse')
-        #     self.el = custom_ellipse()
-        #     # self.el.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
-        #     # spawn on mouse click location
-        #     # Concerns:
-        #     # 1) although the event scenePos seems always correct,
-        #     # the ellipse's scenePos and pos are always (-25.5, -25.5)
-        #     # 2) the ellipses have no parents, be they Item, Object or Widget
-        #     # !!! HOWEVER, we still have access to useful coords via: !!!
-        #     # print(self.el.mapToScene(self.el.boundingRect().center()))
-        #     # I think that nullifies the 2 problems above, but I still want them to be noted.
-        #     # print(f'DEBUG XYZZ_1: event scenePos({event.scenePos().x()},{event.scenePos().y()})')
-        #
-        #     # set size
-        #     self.el.setRect(event.scenePos().x(),
-        #                     event.scenePos().y(),
-        #                     self.state_default_width,
-        #                     self.state_default_height)
-        #     # centre ellipse on mouse click
-        #     self.el.setPos(self.el.pos().x() - 0.5 * self.el.boundingRect().width(),
-        #                    self.el.pos().y() - 0.5 * self.el.boundingRect().height())
-        #     self.el.mapToScene(event.scenePos().x(), event.scenePos().y())
-        #     self.addItem(self.el)
-        #     return
-        #
-        #
-        # if isinstance(item_at_click_loc, QGraphicsEllipseItem):
-        #     if event.button() == Qt.LeftButton:
-        #         # Behavior 2) change state properties
-        #
-        #         pass
-        #     else:
-        #         # Behavior 3) spawn menu
-        #         # todo: spawn menu and stuff
-        #         pass
+        # TODO: REDO ALL THIS STUFF (behavior) below
+        # then move into its own file, probably
+        if not item_at_click_loc:
+            # Behavior 1) create ellipse
+            print('info: user clicked on empty space. Creating ellipse')
+            self.el = custom_ellipse()
+            self.el.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
+            # spawn on mouse click location
+            # Concerns:
+            # 1) although the event scenePos seems always correct,
+            # the ellipse's scenePos and pos are always (-25.5, -25.5)
+            # 2) the ellipses have no parents, be they Item, Object or Widget
+            # !!! HOWEVER, we still have access to useful coords via: !!!
+            # print(self.el.mapToScene(self.el.boundingRect().center()))
+            # I think that nullifies the 2 problems above, but I still want them to be noted.
+            # print(f'DEBUG XYZZ_1: event scenePos({event.scenePos().x()},{event.scenePos().y()})')
+
+            # set size
+            self.el.setRect(event.scenePos().x(),
+                            event.scenePos().y(),
+                            self.state_default_width,
+                            self.state_default_height)
+            # centre ellipse on mouse click
+            self.el.setPos(self.el.pos().x() - 0.5 * self.el.boundingRect().width(),
+                           self.el.pos().y() - 0.5 * self.el.boundingRect().height())
+            self.el.mapToScene(event.scenePos().x(), event.scenePos().y())
+            self.addItem(self.el)
+            # I'm not setting properties automatically. I'll leave that up to the user for now.
+            return
+
+
+        if isinstance(item_at_click_loc, custom_ellipse):
+            # TODO: code for dragging behavior
+            # see https://qt.developpez.com/doc/4.6/dnd/
+            # ctrl-f
+            # "For widgets that need to distinguish between mouse clicks and drags"
+            if event.button() == Qt.LeftButton:
+                # Behavior 2) change state properties
+                print('info: user clicked state. Changing state properties')
+                clicked_state = item_at_click_loc
+
+                # accepting.initial. -> a. -> i. -> neither -> accepting.initial. -> ...
+                if clicked_state.accepting and clicked_state.initial:
+                    # ai -> a
+                    self._removeStatePropertyFromAutomatonBoard(clicked_state, 'i')
+                    clicked_state.toggleInitial()
+                elif clicked_state.accepting and not clicked_state.initial:
+                    # a -> i
+                    self._removeStatePropertyFromAutomatonBoard('i')
+                    self._addStatePropertyToAutomatonBoard('a')
+                    clicked_state.toggleAccepting()
+                    clicked_state.toggleInitial()
+                elif not clicked_state.accepting and clicked_state.initial:
+                    # i -> neither
+                    clicked_state.toggleInitial()
+                    self._removeStatePropertyFromAutomatonBoard(clicked_state, 'i')
+                elif not clicked_state.accepting and not clicked_state.initial:
+                    # neither -> ai
+                    self._addStatePropertyToAutomatonBoard(clicked_state, 'ai')
+                    clicked_state.toggleAccepting()
+                    clicked_state.toggleInitial()
+                return
+            elif event.button() == Qt.RightButton:
+                # Behavior 4) spawn menu
+                # todo: spawn menu and stuff
+
+                pass
+            else:
+                # neither left nor right click on state
+                return
 
 
 
