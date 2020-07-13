@@ -24,6 +24,15 @@ class custom_ellipse(QGraphicsEllipseItem):
         # print('debug123', self.parentWidget())
         # print('debug123', self.parentObject())
 
+
+    # def mouseReleaseEvent(self, event):
+    #     # Do your stuff here.
+    #     return QtGui.QGraphicsEllipseItem.mouseReleaseEvent(self, event)
+    #
+    # def hoverMoveEvent(self, event):
+    #     # Do your stuff here.
+    #     pass
+
     def contextMenuEvent(self, event):
         # add right click behavior (if relevant)
         # menu = QMenu(QGraphicsEllipseItem)
@@ -43,18 +52,20 @@ class custom_ellipse(QGraphicsEllipseItem):
         QMenu(str, parent: QWidget = None): argument 1 has unexpected type 'sip.wrappertype'
         '''
         # note that actions can have icons and shortcuts. That might be nice.
-        delete_action = menu.addAction("Delete object")
-        delete_action.setStatusTip("Exit the program")
-        menu.addAction(delete_action)
-        move_action = menu.addAction("TK: Placeholder: Move state")
-        cancel_action = menu.addAction("Cancel")
-        # delete_action.triggered.connect(quit())
-        # needs a very specific format. Specifically a function (lambda or declared elsewhere). self.hide() by itself autotriggers.
-        # PLACEHOLDER
-        delete_action.triggered.connect(lambda x: self.delete(self))
-
-
-        action = menu.exec(QPoint(self.pos().x(), self.pos().y()))
+        # delete_action = menu.addAction("Delete object")
+        # delete_action.setStatusTip("Exit the program")
+        # menu.addAction(delete_action)
+        # move_action = menu.addAction("TK: Placeholder: Move state")
+        # cancel_action = menu.addAction("Cancel")
+        # # delete_action.triggered.connect(quit())
+        # # needs a very specific format. Specifically a function (lambda or declared elsewhere). self.hide() by itself autotriggers.
+        # # PLACEHOLDER
+        # # idea is that I'll get the scene to handle deletion, given that it will involve deleting related items
+        # # like transitions too
+        # delete_action.triggered.connect(lambda x: self.parentWidget().delete_ellipse(self))
+        #
+        #
+        # action = menu.exec(QPoint(self.pos().x(), self.pos().y()))
 
     # todo: code methods to toggle accepting, initial states
     # and represent them, too (logically)

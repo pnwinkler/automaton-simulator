@@ -2,6 +2,12 @@
 # responsible for creating and placing items, representing a board state,
 # updating item properties, handling all left-click behavior etc.
 
+from PyQt5 import QtCore, QtWidgets
+import PyQt5.QtGui
+from PyQt5.QtCore import QTimer, QLineF
+from PyQt5.QtWidgets import QApplication, QPushButton, QVBoxLayout, QWidget, QGraphicsLineItem, QGraphicsEllipseItem
+from PyQt5.QtGui import QIcon, QPixmap, QFont
+
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QLineEdit, QPushButton
 from PyQt5.QtCore import Qt, QRect
 from PyQt5.QtGui import QTransform
@@ -11,6 +17,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+
 # logger.debug("HI")
 
 
@@ -44,28 +52,75 @@ class clickable_qgraphicsscene(QGraphicsScene):
         self.automaton_board = dict()
 
     def mousePressEvent(self, event):
-        # the scene only responds to left clicks. Right clicks (such as for menus)
-        # are handled by the objects themselves.
+        # should be put into a behaviours file imo. Makes this file more legible.
+        # be wary of import problems / problems accessing "self" or whatever
         if event.button() != Qt.LeftButton:
             return
 
-        # todo: place different objects according to where the user clicks. Set properties if needed
-        # todo: update description below
-        # depending on where the user clicks, we may create an object
-        # (a state or arrow), or we may alter a state's properties.
-        # SCHEME:
-        # left click on empty space -> create state
-        # left click on state -> change its properties
+        # todo: update description below, once stuff is implemented.
+        # depending on where the user clicks, we trigger a different behavior
+        # BEHAVIOR SCHEME:
+        # 1) left click on empty space -> create state
+        # 2) left click on state -> change its properties (best handled in custom ellipse item?)
+        # 3) right click on state -> bring up options menu. Idk where this is best implemented. Probably here? Consistent?
+        # 4) left click on arrow -> we change its transition character.
         # ...
 
-        # click location is only meaningfully measured in terms of scenePos. pos() just gives 0,0
+        # click location is only meaningfully measured in terms of scenePos(). pos() just gives 0,0
         x = event.scenePos().x()
         y = event.scenePos().y()
 
         state_count = 0
 
         # QTransform() is mandatory
+        # todo: is this the best approach? Do we not want to find the closest item centre to the click?
+        #   but would that cause bugs in closely-placed states? Where clicking on a state's edge would
+        #   register as clicking on the transition's centre (as it's closer)?
+        #   but there's no need to click on or near a state edge in our current control scheme
         item_at_click_loc = self.itemAt(x, y, QTransform())
+
+        # # TODO: REDO ALL THIS STUFF below
+        # # then move into its own file, probably
+        # if not item_at_click_loc:
+        #     # Behavior 1) create ellipse
+        #     print('info: user clicked on empty space. Creating ellipse')
+        #     self.el = custom_ellipse()
+        #     # self.el.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
+        #     # spawn on mouse click location
+        #     # Concerns:
+        #     # 1) although the event scenePos seems always correct,
+        #     # the ellipse's scenePos and pos are always (-25.5, -25.5)
+        #     # 2) the ellipses have no parents, be they Item, Object or Widget
+        #     # !!! HOWEVER, we still have access to useful coords via: !!!
+        #     # print(self.el.mapToScene(self.el.boundingRect().center()))
+        #     # I think that nullifies the 2 problems above, but I still want them to be noted.
+        #     # print(f'DEBUG XYZZ_1: event scenePos({event.scenePos().x()},{event.scenePos().y()})')
+        #
+        #     # set size
+        #     self.el.setRect(event.scenePos().x(),
+        #                     event.scenePos().y(),
+        #                     self.state_default_width,
+        #                     self.state_default_height)
+        #     # centre ellipse on mouse click
+        #     self.el.setPos(self.el.pos().x() - 0.5 * self.el.boundingRect().width(),
+        #                    self.el.pos().y() - 0.5 * self.el.boundingRect().height())
+        #     self.el.mapToScene(event.scenePos().x(), event.scenePos().y())
+        #     self.addItem(self.el)
+        #     return
+        #
+        #
+        # if isinstance(item_at_click_loc, QGraphicsEllipseItem):
+        #     if event.button() == Qt.LeftButton:
+        #         # Behavior 2) change state properties
+        #
+        #         pass
+        #     else:
+        #         # Behavior 3) spawn menu
+        #         # todo: spawn menu and stuff
+        #         pass
+
+
+
 
         if not isinstance(item_at_click_loc, QGraphicsTextItem):
             # Determine where (relative to on-screen icons) a user clicked
@@ -85,7 +140,6 @@ class clickable_qgraphicsscene(QGraphicsScene):
                 is_state = self._isState(c)
                 clicked_obj = c
 
-                size = c.sceneBoundingRect().size()
                 # note that QRectF has methods like bottomLeft() and center() !!
                 width = c.boundingRect().width()
                 height = c.boundingRect().height()
@@ -101,6 +155,8 @@ class clickable_qgraphicsscene(QGraphicsScene):
                     # this happens even though the ellipses APPEAR to be far from each other
                     # look to where ellipses are defined and created, for clues
                     # c.setPos(50,50)
+                    print("info: user clicked on state")
+                    print("DEBUG: c.pos().x(), c.pos().y(), event.pos().x(), event.pos().y()", end='\n\t')
                     print(c.pos().x(), c.pos().y(), event.pos().x(), event.pos().y())
 
                     # user clicked the central third
@@ -229,13 +285,18 @@ class clickable_qgraphicsscene(QGraphicsScene):
             if user_clicked_empty_space:
                 print('info: user clicked on empty space. Creating ellipse')
                 self.el = custom_ellipse()
+                # self.el.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
                 # spawn on mouse click location
-                # why does the pos() of the ellipse completely disregard the event's scenePos()?
-                # no matter the scenePos, the new ellipse's scenePos and pos are -25.5, -25.5
-                # the -25.5 comes from the 0.5 * ....
-                # the new ellipse has a scenePos and pos of (0,0)
-                # we're creating ellipses WITHOUT parents, it seems. Is that a problem?
-                print(f'DEBUG XYZZ: event scenePos({event.scenePos().x()},{event.scenePos().y()})')
+                # Concerns:
+                # 1) although the event scenePos seems always correct,
+                # the ellipse's scenePos and pos are always (-25.5, -25.5)
+                # 2) the ellipses have no parents, be they Item, Object or Widget
+                # !!! HOWEVER, we still have access to useful coords via: !!!
+                # print(self.el.mapToScene(self.el.boundingRect().center()))
+                # I think that nullifies the 2 problems above, but I still want them to be noted.
+                print(f'DEBUG XYZZ_1: event scenePos({event.scenePos().x()},{event.scenePos().y()})')
+
+                # set size
                 self.el.setRect(event.scenePos().x(),
                                 event.scenePos().y(),
                                 self.state_default_width,
@@ -243,16 +304,8 @@ class clickable_qgraphicsscene(QGraphicsScene):
                 # centre ellipse on mouse click
                 self.el.setPos(self.el.pos().x() - 0.5 * self.el.boundingRect().width(),
                                self.el.pos().y() - 0.5 * self.el.boundingRect().height())
+                self.el.mapToScene(event.scenePos().x(), event.scenePos().y())
                 self.addItem(self.el)
-                # TODO: figure out why ellipses always claim to be at -25.5, -25.5 scenePos and pos, when created here
-                #  even when they appear in different places
-                # I think lines 229-230 above may be setting it incorrectly. It may appear correct visually, regardless?
-                # probably we have a bad conversion between scenePos and pos systems
-                # really? Idk. Visually it's correct
-                print(
-                    f'DEBUG XYZZ gcs.py: ellipse scenePos({self.el.scenePos().x()},{self.el.scenePos().y()}), ellipse pos({self.el.pos().x()},{self.el.pos().y()})')
-                # print(f'DEBUG XYZZ: ellipse rect')
-                print(self.el.parentItem(), self.el.parentObject(), self.el.parentWidget())
                 return
 
         # item_at_loc is a QGraphicsTextItem
@@ -641,6 +694,14 @@ class clickable_qgraphicsscene(QGraphicsScene):
 
     def _closureconnectTwoStates(self, target_state_tooltip):
         def _connectTwoStates():
+            '''
+            # CONSIDER. Just need to optionally replace centre with point on edge.
+            # But this is way simpler than stuff below 
+            start = e1.mapToScene(e1.boundingRect().center())
+            end = e2.mapToScene(e2.boundingRect().center())
+            l = QGraphicsLineItem(QLineF(start, end))
+            scene.addItem(l)
+            '''
             # connects origin state and target state with an arrow via their closest corners
             # will (soon) provide curved arrows in cases where there's a state between orig.. and target
             # also controls the orientation of arrows
