@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
-# Form implementation generated from reading ui file 'mainwindow.ui'
-# Parts created by: PyQt5 UI code generator 5.10.1
-# DO NOT REPLACE THIS FILE!!! it contains custom code
-# this is the default mainwindow for now.
+# contains all custom code for mainwindow.
+# the other file, "mainwindow_base.py", is purely Qt-generated.
+# the reason they're kept separated is to separate the presentation from the behavior.
+# this way, a new mockup can quickly and easily be exported from Designer into this project.
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import QFont
@@ -13,196 +12,44 @@ import automaton_logic as automaton_logic
 import regex_generator as regex_generator
 import resources.svg_paths as svg_paths
 from collections import OrderedDict
+from mainwindow_base import Ui_MainWindow
 
+class MW_Custom(Ui_MainWindow):
+    def __init__(self, *args):
+        super(MW_Custom, self).__init__(*args)
 
-class Ui_MainWindow(object):
-    def __init__(self):
-        # set up variables related to automaton logic
-        # user_string holds the string entered into self.mw_enter_string_to_test_lineedit
-        # it's typically passed on to other functions for testing acceptance against the
-        # onscreen automaton
+        # set automaton variables
+        # user_string holds the user's custom string, typically used in other functions to test automaton acceptance
+        # (of the onscreen automaton)
         self.user_string = None
 
         # todo: revisit once state updating is complete. Is this a good idea?
-        # whereas the self.user_string remains unchanged throughout, this string will be
-        # printed, and used to demonstrate the progress of the automaton (the strikethrough area...)
+        # whereas the self.user_string remains unchanged throughout, this string will be changed and printed
+        # each step, to demonstrate the progress of the automaton (in the strikethrough area, right of user input)
         # self.progress_string = None
 
         # an index of our position in the user's string. Incremented as we progress the automaton,
         # decremented as we regress. Used for keeping track of current character for input processing
-        self.index_in_user_str = 0
+        self.index_in_user_str = 5
 
         # we don't create the automaton yet, because it will be created only when there's stuff to populate it with
         # it also allows for easier coding, where we can just check if not self.automaton:...
+        # and can be used to ensure a singleton
         self.automaton = None
 
         # used by self.updateAutomatonFromAutomatonBoard() to see if changes have been made
+        # todo: rename that function. Also, does it make sense for this to be here? Should this be a property of
+        #  the Automaton object?
         self.previous_board = None
 
         # the regex problem for the user to solve. Appears in the top left.
         self.regex_to_solve = None
 
     def setupUi(self, MainWindow):
-        MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(840, 580)
-        self.centralwidget = QtWidgets.QWidget(MainWindow)
-        self.centralwidget.setObjectName("centralwidget")
-
-        # set up the label in the top left
-        self.ui_problem_to_solve_tooltip_label = QtWidgets.QLabel(self.centralwidget)
-        self.ui_problem_to_solve_tooltip_label.setGeometry(QtCore.QRect(0, 0, 300, 21))
-        self.ui_problem_to_solve_tooltip_label.setObjectName("ui_problem_to_solve_tooltip_label")
-        self.ui_problem_to_solve_tooltip_label.setFont(QFont("Arial", 12))
-
-        # create a QGraphicsView in self.centralwidget, to house the QGraphicsScene below
-        self.mw_central_graphics_area_graphicsView = QtWidgets.QGraphicsView(self.centralwidget)
-
-        # I don't know to what value to set this, or why it should be that particular value
-        self.mw_central_graphics_area_graphicsView.setSceneRect(QtCore.QRectF(0, 0, 838, 428))
-
-        # defines the borders of the graphicsView area. It's within these borders that the scene goes
-        # if the scene is smaller than the view's geometry, scroll bars appear
-        self.mw_central_graphics_area_graphicsView.setGeometry(QtCore.QRect(0, 0, 840, 430))
-        self.mw_central_graphics_area_graphicsView.setObjectName("mw_central_graphics_area_graphicsView")
-
-        # use our own subclass for the graphics scene
-        self.mw_central_graphicsScene = clickable_qgraphicsscene(self.mw_central_graphics_area_graphicsView)
-        self.mw_central_graphics_area_graphicsView.setScene(self.mw_central_graphicsScene)
-
-        # testing code
-        # self.el = custom_ellipse('ellipse_1', 'ID254')
-        # self.el.setRect(50,50,120,120)
-        # self.mw_central_graphicsScene.addItem(self.el)
-        # self.el2 = QtWidgets.QGraphicsEllipseItem()
-        # self.el2.setRect(160,145,10,10)
-        # self.mw_central_graphicsScene.addItem(self.el2)
-        # # collision detection works excellently with ellipses
-        # print("Debug: Do the two ellipses collide?", self.el2.collidesWithItem(self.el))
-
-        # set background color of graphicsView
-        # self.mw_central_graphics_area_graphicsView.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(245,245,255)))
-
-        self.ui_skip_to_start_pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.ui_skip_to_start_pushButton.setGeometry(QtCore.QRect(365, 430, 30, 30))
-        self.ui_skip_to_start_pushButton.setText("")
-        icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap(svg_paths.skip_to_begin), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.ui_skip_to_start_pushButton.setIcon(icon)
-        self.ui_skip_to_start_pushButton.setIconSize(QtCore.QSize(100, 42))
-        self.ui_skip_to_start_pushButton.setObjectName("ui_skip_to_start_pushButton")
-        self.ui_skip_back_one_step_pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.ui_skip_back_one_step_pushButton.setGeometry(QtCore.QRect(405, 430, 30, 30))
-        self.ui_skip_back_one_step_pushButton.setText("")
-        icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap(svg_paths.step_backwards), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.ui_skip_back_one_step_pushButton.setIcon(icon1)
-        self.ui_skip_back_one_step_pushButton.setIconSize(QtCore.QSize(100, 25))
-        self.ui_skip_back_one_step_pushButton.setObjectName("ui_skip_back_one_step_pushButton")
-        self.ui_skip_forward_one_step_pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.ui_skip_forward_one_step_pushButton.setGeometry(QtCore.QRect(445, 430, 30, 30))
-        self.ui_skip_forward_one_step_pushButton.setText("")
-        icon2 = QtGui.QIcon()
-        icon2.addPixmap(QtGui.QPixmap(svg_paths.step_forwards), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.ui_skip_forward_one_step_pushButton.setIcon(icon2)
-        self.ui_skip_forward_one_step_pushButton.setIconSize(QtCore.QSize(100, 25))
-        self.ui_skip_forward_one_step_pushButton.setObjectName("ui_skip_forward_one_step_pushButton")
-        self.ui_skip_to_end_pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.ui_skip_to_end_pushButton.setGeometry(QtCore.QRect(485, 430, 30, 30))
-        self.ui_skip_to_end_pushButton.setText("")
-        icon3 = QtGui.QIcon()
-        icon3.addPixmap(QtGui.QPixmap(svg_paths.skip_to_end), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.ui_skip_to_end_pushButton.setIcon(icon3)
-        self.ui_skip_to_end_pushButton.setIconSize(QtCore.QSize(100, 42))
-        self.ui_skip_to_end_pushButton.setObjectName("ui_skip_to_end_pushButton")
-        self.ui_take_string_to_test_lineedit = QtWidgets.QLineEdit(self.centralwidget)
-        self.ui_take_string_to_test_lineedit.setGeometry(QtCore.QRect(365, 460, 150, 31))
-        self.ui_take_string_to_test_lineedit.setToolTip("")
-        self.ui_take_string_to_test_lineedit.setToolTipDuration(2)
-        self.ui_take_string_to_test_lineedit.setObjectName("ui_take_string_to_test_textEdit")
-        self.ui_live_input_proc_summary_label = QtWidgets.QLabel(self.centralwidget)
-        self.ui_live_input_proc_summary_label.setGeometry(QtCore.QRect(375, 490, 130, 17))
-        self.ui_live_input_proc_summary_label.setObjectName("ui_live_input_proc_summary_label")
-        self.ui_input_accepted_or_rejected_label = QtWidgets.QLabel(self.centralwidget)
-        self.ui_input_accepted_or_rejected_label.setGeometry(QtCore.QRect(410, 530, 130, 21))
-        self.ui_input_accepted_or_rejected_label.setObjectName("ui_input_accepted_or_rejected_label")
-
-        # added to display bolded text, for the currently processed string
-        self.mw_current_line_lbl = QtWidgets.QLabel(self.centralwidget)
-        self.mw_current_line_lbl.setGeometry(QtCore.QRect(550, 425, 120, 35))
-        self.mw_current_line_lbl.setObjectName("mw_current_line_lbl")
-        # self.mw_current_line_lbl.setText("TK: this will hold currently processed line (i.e. user string minus already done stuff")
-        self.bold_font = QtGui.QFont()
-        self.bold_font.setBold(True)
-        self.mw_current_line_lbl.setFont(self.bold_font)
-        self.mw_current_line_lbl.show()
-
-        # added in order to be below self.mw_current_line_lbl and show past strings
-        self.mw_previous_line_lbl = QtWidgets.QLabel(self.centralwidget)
-        self.mw_previous_line_lbl.setGeometry(QtCore.QRect(550, 455, 130, 100))
-        self.mw_previous_line_lbl.setObjectName("mw_previous_line_lbl")
-        self.strikethrough_font = QtGui.QFont()
-        self.strikethrough_font.setStrikeOut(True)
-        self.mw_previous_line_lbl.setFont(self.strikethrough_font)
-        self.mw_previous_line_lbl.show()
-
-        self.ui_difficulty_easy_pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.ui_difficulty_easy_pushButton.setGeometry(QtCore.QRect(0, 430, 110, 41))
-        self.ui_difficulty_easy_pushButton.setObjectName("ui_difficulty_easy_pushButton")
-        self.ui_difficulty_medium_pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.ui_difficulty_medium_pushButton.setGeometry(QtCore.QRect(0, 470, 110, 41))
-        self.ui_difficulty_medium_pushButton.setObjectName("ui_difficulty_medium_pushButton")
-        self.ui_difficulty_hard_pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.ui_difficulty_hard_pushButton.setGeometry(QtCore.QRect(0, 510, 110, 41))
-        self.ui_difficulty_hard_pushButton.setObjectName("ui_difficulty_hard_pushButton")
-        self.ui_update_automaton_pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.ui_update_automaton_pushButton.setGeometry(QtCore.QRect(730, 510, 110, 41))
-        self.ui_update_automaton_pushButton.setObjectName("ui_update_automaton_pushButton")
-        self.ui_submit_solution_pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.ui_submit_solution_pushButton.setGeometry(QtCore.QRect(730, 470, 110, 41))
-        self.ui_submit_solution_pushButton.setObjectName("ui_submit_solution_pushButton")
-        self.ui_request_hint_pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.ui_request_hint_pushButton.setGeometry(QtCore.QRect(730, 430, 110, 41))
-        self.ui_request_hint_pushButton.setObjectName("ui_request_hint_pushButton")
-        self.mw_central_graphics_area_graphicsView.raise_()
-        self.ui_problem_to_solve_tooltip_label.raise_()
-        self.ui_skip_to_start_pushButton.raise_()
-        self.ui_skip_back_one_step_pushButton.raise_()
-        self.ui_skip_forward_one_step_pushButton.raise_()
-        self.ui_skip_to_end_pushButton.raise_()
-        self.ui_take_string_to_test_lineedit.raise_()
-        self.ui_live_input_proc_summary_label.raise_()
-        self.ui_input_accepted_or_rejected_label.raise_()
-        self.ui_difficulty_easy_pushButton.raise_()
-        self.ui_difficulty_medium_pushButton.raise_()
-        self.ui_difficulty_hard_pushButton.raise_()
-        self.ui_update_automaton_pushButton.raise_()
-        self.ui_submit_solution_pushButton.raise_()
-        self.ui_request_hint_pushButton.raise_()
-        MainWindow.setCentralWidget(self.centralwidget)
-        self.statusbar = QtWidgets.QStatusBar(MainWindow)
-        self.statusbar.setObjectName("statusbar")
-        MainWindow.setStatusBar(self.statusbar)
-
-        self.retranslateUi(MainWindow)
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
-
-    def retranslateUi(self, MainWindow):
-        _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.ui_problem_to_solve_tooltip_label.setText(_translate("MainWindow", "Problem to solve: "))
-        self.ui_take_string_to_test_lineedit.setPlaceholderText(_translate("MainWindow", "Enter a string to test"))
-        self.ui_live_input_proc_summary_label.setText(_translate("MainWindow", ""))
-        self.ui_input_accepted_or_rejected_label.setText(_translate("MainWindow", ""))
-        self.ui_difficulty_easy_pushButton.setText(_translate("MainWindow", "Easy"))
-        self.ui_difficulty_medium_pushButton.setText(_translate("MainWindow", "Medium"))
-        self.ui_difficulty_hard_pushButton.setText(_translate("MainWindow", "Hard"))
-        self.ui_update_automaton_pushButton.setText(_translate("MainWindow", "Update auto."))
-        self.ui_submit_solution_pushButton.setText(_translate("MainWindow", "Submit"))
-        self.ui_request_hint_pushButton.setText(_translate("MainWindow", "Hint"))
+        super(MW_Custom, self).setupUi(MainWindow)
 
     def renameGuiElements(self):
-        # I want maximally descriptive names as items are being created, but shorter names
-        # when I work with them
+        # Alias long names, and indicate which elements are okay to modify.
         # ui_ indicates items generated by Qt, and mw_ items that I'm modifying
         # so when I see a ui_ item elsewhere, I know not to modify it
         self.mw_problem_to_solve_lbl = self.ui_problem_to_solve_tooltip_label
@@ -213,33 +60,27 @@ class Ui_MainWindow(object):
         self.mw_hard_pushbtn = self.ui_difficulty_hard_pushButton
         self.mw_hint_pushbtn = self.ui_request_hint_pushButton
         self.mw_submit_pushbtn = self.ui_submit_solution_pushButton
-        self.mw_update_automaton_pushbtn = self.ui_update_automaton_pushButton
+        self.mw_toggle_solution_pushbtn = self.ui_toggle_solution_pushButton
         self.mw_skip_to_begin_pushbtn = self.ui_skip_to_start_pushButton
         self.mw_step_backwards_pushbtn = self.ui_skip_back_one_step_pushButton
         self.mw_step_forwards_pushbtn = self.ui_skip_forward_one_step_pushButton
         self.mw_skip_to_end_pushbtn = self.ui_skip_to_end_pushButton
         self.mw_live_summary_lbl = self.ui_live_input_proc_summary_label
 
+
     def linkButtonsWithFunctions(self):
-        # generate a problem and write to the appropriate label
+        # generate a problem and write to the appropriate label (top left)
         self.mw_easy_pushbtn.clicked.connect(self.requestProblemEasy)
         self.mw_med_pushbtn.clicked.connect(self.requestProblemMedium)
         self.mw_hard_pushbtn.clicked.connect(self.requestProblemHard)
 
-        # accepts a string to test. Reads the user's input, saves it,
-        # other functions may use that string to test the automaton
+        # accept a user's string, that other functions may use to test the automaton
         self.mw_enter_string_to_test_lineedit.editingFinished.connect(self.takeStringToTest)
 
         # when the automaton progresses, indicate whether the user's entered string is
         # accepted/accepting/rejected/rejecting, where the -ed prints indicate the final result
         # and the -ing prints indicate acceptance *at the current stage* of progression
-        # self.mw_step_forwards_pushbtn.clicked.connect(self.stepForwards)
-
-        # generate a problem to solve
-        # self.mw_easy_pushbtn.clicked.connect(self.requestProblemEasy)
-        self.mw_easy_pushbtn.clicked.connect(self.requestProblemEasy)
-        self.mw_med_pushbtn.clicked.connect(self.requestProblemMedium)
-        self.mw_hard_pushbtn.clicked.connect(self.requestProblemHard)
+        self.mw_step_forwards_pushbtn.clicked.connect(self.stepForwards)
 
         # generate a hint
         self.mw_hint_pushbtn.clicked.connect(self.generateHint)
@@ -248,13 +89,18 @@ class Ui_MainWindow(object):
         self.mw_submit_pushbtn.clicked.connect(self.acceptSubmission)
 
         # toggle the solution
-        self.mw_update_automaton_pushbtn.clicked.connect(self.updateAutomaton)
+        self.mw_toggle_solution_pushbtn.clicked.connect(self.toggleSolution)
 
         # playback control
         self.mw_skip_to_begin_pushbtn.clicked.connect(self.skipToBegin)
         self.mw_step_backwards_pushbtn.clicked.connect(self.stepBackwards)
         self.mw_step_forwards_pushbtn.clicked.connect(self.stepForwards)
         self.mw_skip_to_end_pushbtn.clicked.connect(self.skipToEnd)
+
+    def toggleSolution(self):
+        # should toggle hide the user's automaton and toggle show a solution in its place
+        print("toggleSolution() not yet implemented")
+        pass
 
     def takeStringToTest(self):
         # called when user finishes editing self.mw_enter_string_to_test_lineedit
@@ -496,12 +342,14 @@ class Ui_MainWindow(object):
             # print("DEBUG: except block accepting?", accepting)
             if accepting:
                 self.mw_user_string_accepted_or_rejected_lbl.setText("ACCEPTED")
+            else:
+                self.mw_user_string_accepted_or_rejected_lbl.setText("REJECTED")
 
         if not accepting:
-            self.mw_user_string_accepted_or_rejected_lbl.setText("REJECTED")
+            self.mw_user_string_accepted_or_rejected_lbl.setText("rejecting...")
             return False
         else:
-            self.mw_user_string_accepted_or_rejected_lbl.setText("accepting")
+            self.mw_user_string_accepted_or_rejected_lbl.setText("accepting...")
             self.progressLiveFeed()
             return True
 
@@ -566,7 +414,7 @@ if __name__ == "__main__":
 
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
-    ui = Ui_MainWindow()  # class object
+    ui = MW_Custom()  # class object
     ui.setupUi(MainWindow)  # class function. basically an __init__
 
     # do whatever else setup, linking etc

@@ -1,12 +1,7 @@
 IMMEDIATE GOALS
-Separate custom mainwindow code from Qt generated code into 2 separate files
+Anti-alias ellipses
 
-Get MainWindow to dynamically resize
-- create a new UI in designer (with appropriate layouts, Qt should handle the rest)
-- replace mw_experimental with this
-- rename mainwindow_custom.py to reflect its use (it's now legacy / reference material)
-
-Anti-alias ellipses and line things that connect states
+Anti-alias line things that connect states
 
 
 
@@ -24,6 +19,7 @@ LONG-TERM GOALS
 - if "toggle solution" still exists, determine what to do with it
 - consider allowing curved arrows (and make them point correctly to distant states)
 - consider allowing user to rename states
+- implement toggleSolution, so that the program provides automatically generated solutions for the active regex.
 
 STRETCH GOALS
 - Implement a requirements file, such that absent/invalid libraries trigger a response
