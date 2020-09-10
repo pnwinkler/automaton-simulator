@@ -86,5 +86,5 @@ if __name__ == '__main__':
     # print(f'fail strings, len{(len(fs))}:', fs)
 
     ps, fs = generate_Strings_from_reg('(ab)|((aba)*|(abaab)*)*')
-    print(f'pass strings, len{len(ps)}:', ps)
-    print(f'fail strings, len{(len(fs))}:', fs)
+    print(f'pass strings, len={len(ps)}:', ps)
+    print(f'fail strings, len={(len(fs))}:', fs)

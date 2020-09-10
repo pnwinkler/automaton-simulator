@@ -2,11 +2,9 @@
 # responsible for creating and placing items, representing a board state,
 # updating item properties, handling all left-click behavior etc.
 
-from PyQt5 import QtCore, QtWidgets
-import PyQt5.QtGui
-from PyQt5.QtCore import QTimer, QLineF
-from PyQt5.QtWidgets import QApplication, QPushButton, QVBoxLayout, QWidget, QGraphicsLineItem, QGraphicsEllipseItem
-from PyQt5.QtGui import QIcon, QPixmap, QFont
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import QLineF
+from PyQt5.QtWidgets import QGraphicsLineItem
 
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QLineEdit, QPushButton
 from PyQt5.QtCore import Qt, QRect

@@ -1,28 +1,37 @@
-RESOLVE THE ELLIPSE COORDINATE / POSSIBLE PARENT PROBLEM
-
 IMMEDIATE GOALS
-- finish conversion to new collision detection and object creation system
- - resolve any errors that may incur
- - implement any design/logical changes that that implies
-- if "toggle solution" still exists, determine what to do with it
+Separate custom mainwindow code from Qt generated code into 2 separate files
+
+Get MainWindow to dynamically resize
+- create a new UI in designer (with appropriate layouts, Qt should handle the rest)
+- replace mw_experimental with this
+- rename mainwindow_custom.py to reflect its use (it's now legacy / reference material)
+
+Anti-alias ellipses and line things that connect states
+
+
 
 INTERMEDIATE GOALS
--  allow for diagonal arrows
--  allow for curved arrows
--  make curved arrows correctly point to distant states
--  make arrows touch states (repositioning not necessary). Optional because user can delete and replace state themselves
--   get states to spawn in fixed, arrow-length distances from each other
+- get lines connecting states to indicate directionality
+- get lines connecting states to not strike state center, but its edge instead
+- give states visible names
+- let user create and modify transition rules
+- infer automaton state
+- have automaton logic output be correctly displayed
+- finalize and debug interactions between UI and underlying automaton logic
+
+LONG-TERM GOALS
+- allow for the moving, creation, deletion of states and transition rules
+- if "toggle solution" still exists, determine what to do with it
+- consider allowing curved arrows (and make them point correctly to distant states)
+- consider allowing user to rename states
 
 STRETCH GOALS
-- Implement a requirements file, such that absent/invalid library trigger a response
-- If any other features need developing, develop them. If time is plenty, add some quality of life / improvement features,
- such as:
+- Implement a requirements file, such that absent/invalid libraries trigger a response
+- Consider quality of life / improvement features, such as:
   TIER 1:
-   more attractive UI elements (makes report look better too)
-   allow for user to rename states
-   change state tooltip naming system to one which displays the name in the centre
+   more attractive UI elements
   TIER 2:
-   resizing (it seems like a grid layout might help), automatic repositioning
+
 
 FINAL GOALS
 - test on clean Ubuntu and Windows VMs

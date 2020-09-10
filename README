@@ -1,4 +1,4 @@
-The experimental branch of the project (a comprehensive redesign, which is not yet functional).
+A comprehensive rework, in development. Not yet functional. Aim is to simplify the code base, resolve bugs and collision issues, and develop nice-to-have's such as allowing the UI to scale with the main window.
 
 A graphical simulator of deterministic finite automata, with quizzing element. Allows user to create and test automata, against randomly generated difficulty-graded regular expressions, or against user-provided strings.
 

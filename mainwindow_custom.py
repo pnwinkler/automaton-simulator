@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 # Form implementation generated from reading ui file 'mainwindow.ui'
-# Created by: PyQt5 UI code generator 5.10.1
+# Parts created by: PyQt5 UI code generator 5.10.1
 # DO NOT REPLACE THIS FILE!!! it contains custom code
+# this is the default mainwindow for now.
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import QFont
@@ -22,6 +23,7 @@ class Ui_MainWindow(object):
         # onscreen automaton
         self.user_string = None
 
+        # todo: revisit once state updating is complete. Is this a good idea?
         # whereas the self.user_string remains unchanged throughout, this string will be
         # printed, and used to demonstrate the progress of the automaton (the strikethrough area...)
         # self.progress_string = None
@@ -67,23 +69,8 @@ class Ui_MainWindow(object):
         self.mw_central_graphicsScene = clickable_qgraphicsscene(self.mw_central_graphics_area_graphicsView)
         self.mw_central_graphics_area_graphicsView.setScene(self.mw_central_graphicsScene)
 
-        # print(self.centralwidget.size())
-
-        # A block of code to put an object on screen. Used in testing sometimes
-        # (item size can be changed after being added to scene)
-        # self.svgItem = QtSvg.QGraphicsSvgItem(svg_paths.state_initial)
-        # self.svgItem = svgItem_mod(svg_paths.state_initial)
-        # self.svgSize = self.svgItem.renderer().defaultSize()
-        # print('self.svgSize', self.svgSize)
-        # self.svgItem.setScale(0.09)
-        # self.mw_central_graphicsScene.addItem(self.svgItem)
-        # self.svgItem.setPos(100, 100)
-        # self.svgItem.setProperty('state', 1)
-        # self.svgItem.setProperty('initial', 1)
-        # self.svgItem.setToolTip("Default state mainwindow_custom.")
-
         # testing code
-        # self.el = custom_ellipse()
+        # self.el = custom_ellipse('ellipse_1', 'ID254')
         # self.el.setRect(50,50,120,120)
         # self.mw_central_graphicsScene.addItem(self.el)
         # self.el2 = QtWidgets.QGraphicsEllipseItem()
@@ -563,8 +550,6 @@ class Ui_MainWindow(object):
                 self.index_in_user_str += 1
                 return
 
-            # todo: resolve font issues in the top label
-            # set self.mw_current_line_lbl to the remainder of string
             self.mw_current_line_lbl.setFont(QFont("Arial", 12))
             self.index_in_user_str += 1
             previous_content_of_current_line_lbl = self.mw_current_line_lbl.text()
@@ -589,17 +574,4 @@ if __name__ == "__main__":
     ui.linkButtonsWithFunctions()
 
     MainWindow.show()
-
-    # print('TEST:\n',
-    #       '\n'.join([ui.generateProblemToSolve('easy'),
-    #                  ui.acceptOrRejectUserString(),
-    #                  ui.generateHint(),
-    #                  ui.toggleSolution(),
-    #                  ui.acceptSubmission(),
-    #                  ui.skipToBegin(),
-    #                  ui.stepBackwards(),
-    #                  ui.stepForwards(),
-    #                  ui.skipToEnd(),
-    #                  ui.updateStringSummary()]))
-
     sys.exit(app.exec_())
