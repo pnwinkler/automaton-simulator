@@ -13,10 +13,46 @@ import regex_generator as regex_generator
 import resources.svg_paths as svg_paths
 from collections import OrderedDict
 from mainwindow_base import Ui_MainWindow
+import PyQt5.QtWidgets
+from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtGui import QPen, QBrush
+from PyQt5.QtWidgets import QGraphicsScene, QButtonGroup
+
+
+# todo: figure out how to get clicks to work.
+# this block is all placeholder
+class custom_GraphicsScene(QGraphicsScene):
+    def __init__(self, *args):
+        super(custom_GraphicsScene, self).__init__(*args)
+        self.setSceneRect(-100, -100, 200, 200)
+        self.opt = ""
+
+    def setOption(self, opt):
+        self.opt = opt
+
+    def mousePressEvent(self, event):
+        pen = QPen(QtCore.Qt.black)
+        brush = QBrush(QtCore.Qt.black)
+        x = event.scenePos().x()
+        y = event.scenePos().y()
+        print(x, y)
+        if self.opt == "Generate":
+            self.addEllipse(x, y, 4, 4, pen, brush)
+        elif self.opt == "Select":
+            print(x, y)
+
+
 
 class MW_Custom(Ui_MainWindow):
     def __init__(self, *args):
-        super(MW_Custom, self).__init__(*args)
+        # both lines seem to achieve the same thing
+        Ui_MainWindow.__init__(object)
+        Ui_MainWindow.setupUi(self,MainWindow)
+        Ui_MainWindow.retranslateUi(self, MainWindow)
+        # super(MW_Custom, self).__init__(*args)
+
+        # we need a custom central widget in order to register clicks
+        self.add_scene(custom_GraphicsScene)
 
         # set automaton variables
         # user_string holds the user's custom string, typically used in other functions to test automaton acceptance
@@ -45,6 +81,13 @@ class MW_Custom(Ui_MainWindow):
         # the regex problem for the user to solve. Appears in the top left.
         self.regex_to_solve = None
 
+    def add_scene(self, custom_GraphicsScene):
+        self.scene = custom_GraphicsScene(QGraphicsScene(self.centralwidget))
+        # print(self, type(self))
+        # print(self.scene, type(self.scene))
+        # print(self.centralwidget)
+        self.graphicsView.setScene(self.scene)
+
     def setupUi(self, MainWindow):
         super(MW_Custom, self).setupUi(MainWindow)
 
@@ -65,6 +108,14 @@ class MW_Custom(Ui_MainWindow):
         self.mw_step_backwards_pushbtn = self.ui_skip_back_one_step_pushButton
         self.mw_step_forwards_pushbtn = self.ui_skip_forward_one_step_pushButton
         self.mw_skip_to_end_pushbtn = self.ui_skip_to_end_pushButton
+
+        # replace placeholder text
+        # the label below the user input field
+        self.ui_input_accepted_or_rejected_label.setText("")
+        self.mw_acc_or_rej_lbl = self.ui_input_accepted_or_rejected_label
+
+        # the live summary, to the right of the user input field
+        self.ui_live_input_proc_summary_label.setText("")
         self.mw_live_summary_lbl = self.ui_live_input_proc_summary_label
 
 
@@ -76,11 +127,6 @@ class MW_Custom(Ui_MainWindow):
 
         # accept a user's string, that other functions may use to test the automaton
         self.mw_enter_string_to_test_lineedit.editingFinished.connect(self.takeStringToTest)
-
-        # when the automaton progresses, indicate whether the user's entered string is
-        # accepted/accepting/rejected/rejecting, where the -ed prints indicate the final result
-        # and the -ing prints indicate acceptance *at the current stage* of progression
-        self.mw_step_forwards_pushbtn.clicked.connect(self.stepForwards)
 
         # generate a hint
         self.mw_hint_pushbtn.clicked.connect(self.generateHint)
@@ -98,21 +144,18 @@ class MW_Custom(Ui_MainWindow):
         self.mw_skip_to_end_pushbtn.clicked.connect(self.skipToEnd)
 
     def toggleSolution(self):
-        # should toggle hide the user's automaton and toggle show a solution in its place
+        # toggle hides the user's automaton and shows a solution in its place
         print("toggleSolution() not yet implemented")
-        pass
 
     def takeStringToTest(self):
         # called when user finishes editing self.mw_enter_string_to_test_lineedit
-        # takes the user string, resets the automaton to start(?), then passes
-        # the string on to automaton logic for processing
-        self.user_string = self.mw_enter_string_to_test_lineedit.text()
-        # self.progress_string = self.user_string
-        self.mw_live_summary_lbl.setText("Entered:  " + self.user_string)
-        # italics = QtGui.QFont()
-        # italics.setItalic(True)
-        # self.mw_live_summary_lbl.setFont(italics)
-        print(f"User string \"{self.user_string}\" saved")
+        # that means either hitting "Enter", or typing something then clicking away, or both.
+        entered = self.mw_enter_string_to_test_lineedit.text()
+        if self.user_string != entered:
+            # we don't want to be notified twice, assuming the user presses enter then clicks away
+            self.user_string = self.mw_enter_string_to_test_lineedit.text()
+            self.mw_live_summary_lbl.setText("Entered:  " + self.user_string)
+            print(f"User string \"{self.user_string}\" saved")
 
     def updateAutomatonFromAutomatonBoard(self):
         # looks to self.mw_central_graphicsScene.automaton_board to determine the
@@ -222,22 +265,26 @@ class MW_Custom(Ui_MainWindow):
     def requestProblemHard(self):
         self.generateProblemToSolve('hard')
 
-    # def acceptOrRejectUserString(self):
-    #     # determines whether a user's string is accepted or rejected
-    #     # probably needs the formula of the automaton on screen, in the user space
-    #     return 'PLACEHOLDER string accepted'
-
     def generateHint(self):
+        if not self.automaton:
+            print("Cannot provide hint: no automaton recognized yet. Please create one")
+            return -1
+        if not self.regex_to_solve:
+            print("Cannot provide hint: there's no regex to solve")
+            return -1
+        self.determinePassed(generate_hint=True)
+
+    def determinePassed(self, generate_hint=False):
         # we should test the current automaton (without using GUI elements), on a variety of strings
         # if it passes a string in the fail category, or fails one in the pass category, we write that
         # to the hint label
 
-        if not self.regex_to_solve:
-            print("No regex to solve")
-            return
-        if not self.automaton:
-            print("No automaton created yet")
-            return
+        # if not self.automaton:
+        #     print("No automaton recognized yet. Please create one")
+        #     return -1
+        # if not self.regex_to_solve:
+        #     print("Can't accept submission: there's no regex to solve")
+        #     return -1
 
         # returns 2 lists, first of pass strings, second of fail strings. Both sorted by shortest first
         pass_list, fail_list = generate_Strings_from_reg(self.regex_to_solve)
@@ -246,28 +293,36 @@ class MW_Custom(Ui_MainWindow):
         for p in pass_list:
             passed = self.automaton.determineWholeInputAcceptance(p)
             if not passed:
-                print(p)
-                self.mw_hint_pushbtn.setText(p)
+                if generate_hint:
+                    print(f"Hint: \"{p}\" should not pass")
+                    self.mw_hint_pushbtn.setText(p)
                 return False
         for f in fail_list:
             failed = self.automaton.determineWholeInputAcceptance(f)
             if not failed:
-                print(f)
+                print(f"Hint: \"{f}\" should not pass")
                 self.mw_hint_pushbtn.setText(p)
                 return False
-        print("Automaton fully correct! No hint to give")
+        # print("Automaton fully correct! No hint to give")
         return True
 
     def acceptSubmission(self):
         # this handles hints. If it returns true we say ACCEPTED, else REJECTED
         # this way we automatically generate hints for the user
         if not self.automaton:
-            print("No automaton recognized yet. Please create one, and press \"Update Automaton\"")
+            print("Cannot accept submission: no automaton recognized yet. Please create one")
+            return
+        if not self.regex_to_solve:
+            print("Cannot accept submission: there's no regex to solve")
+            return
 
-        passed = self.generateHint()
+        # self.mw_submit_pushbtn.setStyleSheet('QPushButton {background-color: #A3C1DA; color: red;}')
+        passed = self.determinePassed()
         if passed:
+            self.mw_submit_pushbtn.setStyleSheet('QPushButton {color: green;}')
             self.mw_submit_pushbtn.setText("ACCEPTED")
         else:
+            self.mw_submit_pushbtn.setStyleSheet('QPushButton {color: red;}')
             self.mw_submit_pushbtn.setText("REJECTED")
 
     def updateAutomaton(self):
@@ -286,60 +341,47 @@ class MW_Custom(Ui_MainWindow):
         # reset hint button
         # reset submit button
         if not self.automaton:
+            print("No active automaton.")
             return
 
         self.automaton.regressToStart()
         self.index_in_user_str = 0
-        self.mw_current_line_lbl.setText("")
+        self.mw_acc_or_rej_lbl.setText("")
         self.mw_previous_line_lbl.setText("")
         self.mw_user_string_accepted_or_rejected_lbl.setText("")
         self.mw_hint_pushbtn.setText("Hint")
         self.mw_submit_pushbtn.setText("Submit")
 
         print('skipped to beginning')
-        return 'PLACEHOLDER skipToBegin()'
 
     def stepBackwards(self):
-        # strictly speaking, this is inefficient, but it minimizes how many places need maintenance
-        # as opposed to computing each step in reverse, then exactly undoing what each function did previously
-        # it's also fast, so performance is not an issue
-        len_contents_before = len(self.mw_current_line_lbl.text())
+        # it's faster to recompute from the start than actually undo a step
+        len_contents_before = len(self.mw_acc_or_rej_lbl.text())
+        if len_contents_before == 0:
+            print("Can't undo. No prior operations committed.")
+            return -1
 
         self.skipToBegin()
-        while len(self.mw_current_line_lbl.text()) != len_contents_before + 1:
+        while len(self.mw_acc_or_rej_lbl.text()) != len_contents_before + 1:
             retval = self.stepForwards()
             if retval == -1:
                 # otherwise we get "No valid automaton" spam
                 break
 
     def stepForwards(self):
-        # todo:
-        #  consider implementing visual indications of changes (i.e. active node)
-        #  if so:
-        #   we probably need a way to translate between what self.automaton.active_node_obj is,
-        #   and what the graphical element that we want to adjust / unadjust is. Or just scale
         if not self.automaton:
-            print("No valid automaton. If you've created one, please click the Update Automaton button")
+            print("Cannot step forwards: no valid automaton")
             return -1
         if not self.user_string:
-            print("No user string provided. Please enter it into the text field in the middle, then press enter")
+            print("Cannot step forwards: no user string provided")
             return -1
 
-        # print("DEBUG: self.user_string", self.user_string)
         try:
-            # try block completes once, fails next time
-            # print("DEBUG: index in try block:", self.index_in_user_str)
             # NOTE: the index is handled in the self.progressLiveFeed() function
             accepting = self.automaton.progressOneStep(self.user_string[self.index_in_user_str])
-            # print("DEBUG: try block accepting?", accepting)
-            # self.index_in_user_str += 1
-            # print("DEBUG: happening")
         except IndexError:
             # string is exhausted. We test whether the current node is accepting or rejecting
-            # print("DEBUG: index", self.index_in_user_str)
-            # print("DEBUG: user_str", self.user_string)
             accepting = self.automaton.progressOneStep("")
-            # print("DEBUG: except block accepting?", accepting)
             if accepting:
                 self.mw_user_string_accepted_or_rejected_lbl.setText("ACCEPTED")
             else:
@@ -380,16 +422,16 @@ class MW_Custom(Ui_MainWindow):
             # to equal the newly-entered user string
             self.index_in_user_str += 1
             curr_text = self.user_string[self.index_in_user_str:]
-            self.mw_current_line_lbl.setText('\n' + curr_text)
+            self.mw_acc_or_rej_lbl.setText('\n' + curr_text)
 
             # clear past history (there shoudn't be any anyway)
             self.mw_previous_line_lbl.setText("")
         else:
             if self.index_in_user_str == len(self.user_string) - 1:
-                previous_content_of_current_line_lbl = self.mw_current_line_lbl.text()
+                previous_content_of_current_line_lbl = self.mw_acc_or_rej_lbl.text()
 
                 print("User string exhausted. No more input to process")
-                self.mw_current_line_lbl.setText("ε")
+                self.mw_acc_or_rej_lbl.setText("ε")
 
                 updated_history = previous_content_of_current_line_lbl + self.mw_previous_line_lbl.text()
                 self.mw_previous_line_lbl.setText(updated_history)
@@ -398,10 +440,10 @@ class MW_Custom(Ui_MainWindow):
                 self.index_in_user_str += 1
                 return
 
-            self.mw_current_line_lbl.setFont(QFont("Arial", 12))
+            self.mw_acc_or_rej_lbl.setFont(QFont("Arial", 12))
             self.index_in_user_str += 1
-            previous_content_of_current_line_lbl = self.mw_current_line_lbl.text()
-            self.mw_current_line_lbl.setText("\n" + self.user_string[self.index_in_user_str:])
+            previous_content_of_current_line_lbl = self.mw_acc_or_rej_lbl.text()
+            self.mw_acc_or_rej_lbl.setText("\n" + self.user_string[self.index_in_user_str:])
             print("info: remainder of user string:", self.user_string[self.index_in_user_str:])
 
             # we always prepend to mw_previous_line_lbl
@@ -417,7 +459,7 @@ if __name__ == "__main__":
     ui = MW_Custom()  # class object
     ui.setupUi(MainWindow)  # class function. basically an __init__
 
-    # do whatever else setup, linking etc
+    # do remaining setup (linking etc)
     ui.renameGuiElements()
     ui.linkButtonsWithFunctions()
 

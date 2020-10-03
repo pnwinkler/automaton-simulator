@@ -4,6 +4,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -15,10 +16,10 @@ class Ui_MainWindow(object):
         self.gridLayout_2 = QtWidgets.QGridLayout()
         self.gridLayout_2.setHorizontalSpacing(6)
         self.gridLayout_2.setObjectName("gridLayout_2")
-        self.ui_central_graphics_area_graphicsView = QtWidgets.QGraphicsView(self.centralwidget)
-        self.ui_central_graphics_area_graphicsView.setEnabled(True)
-        self.ui_central_graphics_area_graphicsView.setObjectName("ui_central_graphics_area_graphicsView")
-        self.gridLayout_2.addWidget(self.ui_central_graphics_area_graphicsView, 2, 0, 1, 7)
+        self.graphicsView = QtWidgets.QGraphicsView(self.centralwidget)
+        self.graphicsView.setEnabled(True)
+        self.graphicsView.setObjectName("graphicsView")
+        self.gridLayout_2.addWidget(self.graphicsView, 2, 0, 1, 7)
         self.verticalLayout = QtWidgets.QVBoxLayout()
         self.verticalLayout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
         self.verticalLayout.setObjectName("verticalLayout")
@@ -163,4 +164,6 @@ class Ui_MainWindow(object):
         self.ui_submit_solution_pushButton.setText(_translate("MainWindow", "Submit"))
         self.ui_toggle_solution_pushButton.setText(_translate("MainWindow", "Toggle solution"))
         self.ui_problem_to_solve_tooltip_label.setText(_translate("MainWindow", "Problem to solve:  "))
+
+
 import resources.resources_rc

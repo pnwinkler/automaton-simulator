@@ -1,11 +1,16 @@
 IMMEDIATE GOALS
+figure out what & where the scene is. How do I use it?
+Make the centre pieces not shift left when user has entered a string.
+Make clicking spawn ellipses
+Implement state connections
 Anti-alias ellipses
-
 Anti-alias line things that connect states
-
+Make every button (except Toggle Solution and Hint) do what they're supposed to
+    Those 2 are complicated
 
 
 INTERMEDIATE GOALS
+- improve regex generation
 - get lines connecting states to indicate directionality
 - get lines connecting states to not strike state center, but its edge instead
 - give states visible names
@@ -25,7 +30,9 @@ STRETCH GOALS
 - Implement a requirements file, such that absent/invalid libraries trigger a response
 - Consider quality of life / improvement features, such as:
   TIER 1:
-   more attractive UI elements
+   more attractive UI. Making it scalable made it ugly.
+    - a bottom row that isn't asymmetrical
+    - sexier icons
   TIER 2:
 
 

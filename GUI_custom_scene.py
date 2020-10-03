@@ -16,6 +16,11 @@ import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+'''
+*******
+THIS FILE IS NOT CURRENTLY IN USE! DO NOT BOTHER MODIFYING IT
+*******
+'''
 
 class clickable_qgraphicsscene(QGraphicsScene):
     def __init__(self, parent):
