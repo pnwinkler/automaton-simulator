@@ -1,3 +1,5 @@
+* Update * : this project is incomplete, and I have no plans to continue working on it. Apologies for any inconvenience.
+
 A graphical simulator of deterministic finite automata, with quizzing element. Allows user to create and test automata (step-by-step or atomically), against randomly generated difficulty-graded regular expressions, or user-provided strings.
 
 Requires:
